@@ -1,0 +1,13 @@
+min_log_level: "debug"
+server:
+  port: 5001
+  read_timeout: 10
+  write_timeout: 5
+  rate_limit: 10
+telegram:
+  token: "token"
+jwt_secret: "jwt_secret"
+tracer_host: "localhost:6831"
+grpc:
+  auth_service_port: 5002
+

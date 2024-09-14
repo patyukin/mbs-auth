@@ -2,12 +2,13 @@ services:
   app:
     build:
       dockerfile: local.Dockerfile
-    container_name: mbs-api-gateway-container
+    container_name: mbs-auth-container
     volumes:
       - .:/app
     restart: always
     ports:
-      - "5001:5001"
+      - "5010:5010"
+      - "5011:5011"
     networks:
       - pg
       - redis

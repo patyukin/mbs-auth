@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = ".;authService";
+
+service AuthService {
+  rpc SignUp(SignUpRequest) returns (SignUpResponse);
+  rpc SignIn(SignInRequest) returns (SignInResponse);
+  rpc GetUserByUUID(GetUserByUUIDRequest) returns (GetUserByUUIDResponse);
+}
+
+message SignUpRequest {
+  string email = 1;
+  string password = 2;
+  string telegram_login = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string patronymic = 6;
+  string date_of_birth = 7;
+  string phone = 8;
+  string address = 9;
+}
+
+message SignUpResponse {
+  string user_id = 1;
+  string message = 2;
+}
+
+message SignInRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message SignInResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message GetUserByUUIDRequest {
+  string user_id = 1;
+}
+
+message GetUserByUUIDResponse {
+  string user_id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string patronymic = 5;
+  string date_of_birth = 6;
+  string phone = 7;
+  string address = 8;
+  string telegram_login = 9;
+  string telegram_id = 10;
+  string chat_id = 11;
+  string role = 12;
+  string created_at = 13;
+  string updated_at = 14;
+}

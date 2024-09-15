@@ -1,13 +1,49 @@
 syntax = "proto3";
 
-package auth;
+package auth_v1;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = ".;authService";
 
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Auth API"
+    version: "1.0.0"
+    contact: {
+      name: "Pavel Tyukin"
+      email: "me@patyukin.ru"
+    };
+  };
+
+  host: "localhost:5010",
+  schemes: HTTP,
+  schemes: HTTPS,
+  consumes: "application/json",
+  produces: "application/json",
+};
+
 service AuthService {
-  rpc SignUp(SignUpRequest) returns (SignUpResponse);
-  rpc SignIn(SignInRequest) returns (SignInResponse);
-  rpc GetUserByUUID(GetUserByUUIDRequest) returns (GetUserByUUIDResponse);
+  rpc SignUp(SignUpRequest) returns (SignUpResponse) {
+    option (google.api.http) = {
+      post: "/v1/sign-up"
+      body: "*"
+    };
+  }
+
+  rpc SignIn(SignInRequest) returns (SignInResponse) {
+    option (google.api.http) = {
+      post: "/v1/sign-in"
+      body: "*"
+    };
+  }
+
+  rpc GetUserByUUID(GetUserByUUIDRequest) returns (GetUserByUUIDResponse) {
+    option (google.api.http) = {
+      get: "/v1/get-user-by-uuid"
+    };
+  }
 }
 
 message SignUpRequest {

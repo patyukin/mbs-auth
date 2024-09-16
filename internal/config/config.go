@@ -12,10 +12,11 @@ type Config struct {
 	MinLogLevel string `yaml:"min_log_level" validate:"required,oneof=debug info warn error"`
 	JwtSecret   string `yaml:"jwt_secret" validate:"required"`
 	HttpServer  struct {
-		Port         int `yaml:"port" validate:"required,numeric"`
-		ReadTimeout  int `yaml:"read_timeout" validate:"required,numeric"`
-		WriteTimeout int `yaml:"write_timeout" validate:"required,numeric"`
+		Port int `yaml:"port" validate:"required,numeric"`
 	} `yaml:"http_server" validate:"required"`
+	SwaggerServer struct {
+		Port int `yaml:"port" validate:"required,numeric"`
+	} `yaml:"swagger_server" validate:"required"`
 	GRPCServer struct {
 		Port int `yaml:"port" validate:"required,numeric"`
 	} `yaml:"grpc_server" validate:"required"`

@@ -6,6 +6,8 @@ import (
 	"github.com/patyukin/mbs-auth/internal/server"
 	"github.com/patyukin/mbs-auth/internal/usecase"
 	desc "github.com/patyukin/mbs-auth/pkg/auth_v1"
+	_ "github.com/patyukin/mbs-auth/statik"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -59,7 +61,7 @@ func main() {
 		mux.HandleFunc("/api.swagger.json", serveSwaggerFile("/api.swagger.json"))
 
 		swaggerSrv := &http.Server{
-			Addr:    fmt.Sprintf(":%d", cfg.HttpServer.Port),
+			Addr:    fmt.Sprintf(":%d", cfg.SwaggerServer.Port),
 			Handler: mux,
 		}
 
@@ -77,6 +79,18 @@ func main() {
 		if err = s.Serve(lis); err != nil {
 			log.Fatal().Msgf("failed to serve: %v", err)
 		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		http.Handle("/metrics", promhttp.Handler())
+		log.Info().Msgf("Prometheus metrics exposed on :8080/metrics")
+		if err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.HttpServer.Port), nil); err != nil {
+			log.Fatal().Msgf("Failed to serve Prometheus metrics: %v", err)
+		}
+
 	}()
 
 	wg.Wait()

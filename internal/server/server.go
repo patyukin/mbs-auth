@@ -6,6 +6,7 @@ import (
 )
 
 type UseCase interface {
+	SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error)
 }
 
 type Server struct {
@@ -19,7 +20,7 @@ func New(uc UseCase) *Server {
 	}
 }
 
-func (uc *Server) SignUp(context.Context, *authpb.SignUpRequest) (*authpb.SignUpResponse, error) {
+func (uc *Server) SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error) {
 	panic("qwe")
 }
 

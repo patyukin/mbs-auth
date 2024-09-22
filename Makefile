@@ -28,14 +28,10 @@ install-deps:
 	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.22.0
 	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v2.22.0
 	GOBIN=$(LOCAL_BIN) go install github.com/rakyll/statik@v0.1.7
+	GOBIN=$(LOCAL_BIN) go install github.com/pressly/goose/v3/cmd/goose@latest
 
 tidy:
-	go mod tidy
-
-gen:
-	mkdir -p pkg/swagger
-	make gen-auth-api
-	$(LOCAL_BIN)/statik -src=pkg/swagger/ -include='*.css,*.html,*.js,*.json,*.png'
+	GOBIN=$(LOCAL_BIN) go mod tidy
 
 gen-auth-api:
 	mkdir -p pkg/auth_v1
@@ -51,6 +47,11 @@ gen-auth-api:
 	--openapiv2_out=allow_merge=true,merge_file_name=api:pkg/swagger \
 	--plugin=protoc-gen-openapiv2=bin/protoc-gen-openapiv2 \
 	api/auth_v1/auth.proto
+
+gen:
+	mkdir -p pkg/swagger
+	make gen-auth-api
+	$(LOCAL_BIN)/statik -src=pkg/swagger/ -include='*.css,*.html,*.js,*.json,*.png'
 
 vendor-proto:
 		@if [ ! -d vendor.protogen/validate ]; then \
@@ -71,3 +72,10 @@ vendor-proto:
 			mv vendor.protogen/openapiv2/protoc-gen-openapiv2/options/*.proto vendor.protogen/protoc-gen-openapiv2/options &&\
 			rm -rf vendor.protogen/openapiv2 ;\
 		fi
+
+test:
+	go test ./...
+
+cov:
+	GOBIN=$(LOCAL_BIN) go test ./... -coverprofile=coverage.out
+	GOBIN=$(LOCAL_BIN) go tool cover -html=coverage.out -o coverage.html

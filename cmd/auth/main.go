@@ -9,6 +9,7 @@ import (
 	"github.com/patyukin/mbs-auth/internal/usecase"
 	desc "github.com/patyukin/mbs-auth/pkg/auth_v1"
 	"github.com/patyukin/mbs-auth/pkg/dbconn"
+	"github.com/patyukin/mbs-auth/pkg/migrator"
 	"github.com/patyukin/mbs-auth/pkg/utils"
 	_ "github.com/patyukin/mbs-auth/statik"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -44,6 +45,10 @@ func main() {
 		log.Fatal().Msgf("failed to connect to db: %v", err)
 	}
 
+	if err = migrator.UpMigrations(context.Background(), dbConn); err != nil {
+		log.Fatal().Msgf("failed to up migrations: %v", err)
+	}
+
 	registry := db.New(dbConn)
 	uc := usecase.New(registry)
 	srv := server.New(uc)
@@ -56,6 +61,7 @@ func main() {
 
 	wg := &sync.WaitGroup{}
 
+	// GRPC server
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -66,17 +72,19 @@ func main() {
 		}
 	}()
 
+	// metrics server
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
 		http.Handle("/metrics", promhttp.Handler())
-		log.Info().Msgf("Prometheus metrics exposed on :%d/metrics", cfg.SwaggerServer.Port)
+		log.Info().Msgf("Prometheus metrics exposed on :%d/metrics", cfg.HttpServer.Port)
 		if err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.HttpServer.Port), nil); err != nil {
 			log.Fatal().Msgf("Failed to serve Prometheus metrics: %v", err)
 		}
 	}()
 
+	// swagger server
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

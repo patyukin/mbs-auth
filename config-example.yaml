@@ -1,17 +1,17 @@
 min_log_level: "debug"
 jwt_secret: "jwt_secret"
-http_server:
-  port: 5010
-  read_timeout: 10
-  write_timeout: 5
 grpc_server:
   port: 5011
+http_server:
+  port: 5012
+swagger_server:
+  port: 5013
 postgresql:
   host: "localhost"
-  port: 5432
+  port: 5454
   user: "user"
   password: "password"
-  name: "auth"
+  name: "name"
 redis:
   host: "localhost"
   port: 6379

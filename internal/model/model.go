@@ -46,3 +46,16 @@ type Profile struct {
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   sql.NullTime   `json:"updated_at"`
 }
+
+type UserWithProfile struct {
+	ID           string
+	Email        string
+	Role         string
+	FirstName    string
+	LastName     string
+	Patronymic   sql.NullString
+	DateOfBirth  time.Time
+	ProfileEmail string
+	Phone        string
+	Address      string
+}

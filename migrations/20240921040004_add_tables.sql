@@ -14,7 +14,7 @@ CREATE TABLE users
 CREATE TABLE telegram_users
 (
     id             UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id      UUID REFERENCES users (id) ON UPDATE CASCADE ON DELETE NO ACTION UNIQUE NOT NULL,
+    user_id        UUID REFERENCES users (id) ON UPDATE CASCADE ON DELETE NO ACTION UNIQUE NOT NULL,
     telegram_login TEXT                                                                    NOT NULL,
     telegram_id    BIGINT UNIQUE,
     chat_id        BIGINT UNIQUE,
@@ -25,7 +25,7 @@ CREATE TABLE telegram_users
 CREATE TABLE tokens
 (
     token      UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id  UUID      NOT NULL REFERENCES users (id) ON UPDATE CASCADE ON DELETE NO ACTION,
+    user_id    UUID      NOT NULL REFERENCES users (id) ON UPDATE CASCADE ON DELETE NO ACTION,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NULL
@@ -34,7 +34,7 @@ CREATE TABLE tokens
 CREATE TABLE profiles
 (
     id            UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id     UUID REFERENCES users (id) ON UPDATE CASCADE ON DELETE NO ACTION UNIQUE NOT NULL,
+    user_id       UUID REFERENCES users (id) ON UPDATE CASCADE ON DELETE NO ACTION UNIQUE NOT NULL,
     first_name    VARCHAR(255)                                                            NOT NULL,
     last_name     VARCHAR(255)                                                            NOT NULL,
     patronymic    VARCHAR(255),

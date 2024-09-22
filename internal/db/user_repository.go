@@ -2,230 +2,187 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"time"
+	"github.com/patyukin/mbs-auth/internal/model"
+	authpb "github.com/patyukin/mbs-auth/pkg/auth_v1"
+	"github.com/rs/zerolog/log"
 )
 
-func (r *Repository) InsertIntoUser(ctx context.Context, in model.SignUpData) (uuid.UUID, error) {
-	currentTime := time.Now().UTC()
-	query := `INSERT INTO users (login, password_hash, created_at) VALUES ($1, $2, $3) RETURNING id`
-	row := r.db.QueryRowContext(ctx, query, in.Login, in.Password, currentTime)
+func (r *Repository) InsertIntoUsers(ctx context.Context, in model.User) (uuid.UUID, error) {
+	query := `INSERT INTO users (email, password_hash, role, created_at) VALUES ($1, $2, $3, $4) RETURNING id`
+	row := r.db.QueryRowContext(ctx, query, in.Email, in.PasswordHash, in.Role, in.CreatedAt)
 	if row.Err() != nil {
-		return uuid.UUID{}, fmt.Errorf("failed to insert user: %w", row.Err())
+		return uuid.UUID{}, fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
 	}
 
 	var id uuid.UUID
 	err := row.Scan(&id)
 	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("failed to insert user: %w", err)
+		return uuid.UUID{}, fmt.Errorf("failed row.Scan: %w", err)
 	}
 
 	return id, nil
 }
 
-func (r *Repository) SelectUserByLogin(ctx context.Context, login string) (model.CheckerPasswordData, error) {
-	query := `SELECT id, password_hash FROM users WHERE login = $1`
-	row := r.db.QueryRowContext(ctx, query, login)
+func (r *Repository) SelectUsersWithTokensCount(ctx context.Context) (int32, error) {
+	query := `SELECT COUNT(*) FROM users u INNER JOIN tokens t ON u.id = t.user_id`
+	row := r.db.QueryRowContext(ctx, query)
 	if row.Err() != nil {
-		return model.CheckerPasswordData{}, fmt.Errorf("failed to select user: %w", row.Err())
+		return 0, fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
 	}
 
-	var user model.CheckerPasswordData
-	err := row.Scan(&user.UUID, &user.PasswordHash)
+	var count int32
+	err := row.Scan(&count)
 	if err != nil {
-		return model.CheckerPasswordData{}, fmt.Errorf("failed to select user: %w", err)
+		return 0, fmt.Errorf("failed row.Scan: %w", err)
 	}
 
-	return user, nil
+	return count, nil
 }
 
-func (r *Repository) SelectUserPasswordDataByUUID(ctx context.Context, login string) (model.CheckerPasswordData, error) {
-	query := `SELECT id, password_hash FROM users WHERE id = $1`
-	row := r.db.QueryRowContext(ctx, query, login)
-	if row.Err() != nil {
-		return model.CheckerPasswordData{}, fmt.Errorf("failed to select user: %w", row.Err())
-	}
-
-	var user model.CheckerPasswordData
-	err := row.Scan(&user.UUID, &user.PasswordHash)
-	if err != nil {
-		return model.CheckerPasswordData{}, fmt.Errorf("failed to select user: %w", err)
-	}
-
-	return user, nil
-}
-
-func (r *Repository) SelectUserByUUID(ctx context.Context, userUUID string) (model.User, error) {
-	query := `SELECT id, login, name, surname, role, created_at, updated_at FROM users WHERE id = $1`
-	row := r.db.QueryRowContext(ctx, query, userUUID)
-	if row.Err() != nil {
-		return model.User{}, fmt.Errorf("failed to select user: %w", row.Err())
-	}
-
-	var user model.User
-	err := row.Scan(&user.UUID, &user.Login, &user.Name, &user.Surname, &user.Role, &user.CreatedAt, &user.UpdatedAt)
-	if err != nil {
-		return model.User{}, fmt.Errorf("failed to select user: %w", err)
-	}
-
-	return user, nil
-}
-
-func (r *Repository) InsertToken(ctx context.Context, userUUID uuid.UUID) (uuid.UUID, error) {
-	currentTime := time.Now().UTC()
-	expiresAt := currentTime.Add(24 * 30 * time.Hour)
-	query := `INSERT INTO tokens (user_id, expires_at, created_at) VALUES ($1, $2, $3) RETURNING token`
-	row := r.db.QueryRowContext(ctx, query, userUUID.String(), expiresAt, currentTime)
-	if row.Err() != nil {
-		return uuid.UUID{}, fmt.Errorf("failed to insert token: %w", row.Err())
-	}
-
-	var token uuid.UUID
-	err := row.Scan(&token)
-	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("failed to insert token: %w", err)
-	}
-
-	return token, nil
-}
-
-func (r *Repository) SelectFromTelegramUsersByUser(ctx context.Context, userUUID uuid.UUID) (model.TelegramUser, error) {
-	query := `SELECT id, user_id, tg_username,  tg_user_id, tg_chat_id, created_at, updated_at FROM telegram_users WHERE user_id = $1`
-	row := r.db.QueryRowContext(ctx, query, userUUID.String())
-	if row.Err() != nil {
-		return model.TelegramUser{}, fmt.Errorf("failed to select telegram_users: %w", row.Err())
-	}
-
-	var tgUser model.TelegramUser
-	err := row.Scan(
-		&tgUser.UUID, &tgUser.UserUUID, &tgUser.TgUsername, &tgUser.TgUserID, &tgUser.TgChatID, &tgUser.CreatedAt,
-		&tgUser.UpdatedAt,
-	)
-	if err != nil {
-		return model.TelegramUser{}, fmt.Errorf("failed to select telegram_users: %w", err)
-	}
-
-	return tgUser, nil
-
-}
-
-func (r *Repository) InsertIntoTelegramUsers(ctx context.Context, telegramLogin string, userUUID uuid.UUID) (uuid.UUID, error) {
-	currentTime := time.Now().UTC()
-	query := `INSERT INTO telegram_users (user_id, tg_username, created_at) VALUES ($1, $2, $3) RETURNING id`
-	row := r.db.QueryRowContext(ctx, query, userUUID.String(), telegramLogin, currentTime)
-	if row.Err() != nil {
-		return uuid.UUID{}, fmt.Errorf("failed to insert in telegram_users: %w", row.Err())
-	}
-
-	var id uuid.UUID
-	err := row.Scan(&id)
-	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("failed to insert in telegram_users: %w", err)
-	}
-
-	return id, nil
-}
-
-func (r *Repository) UpdateTelegramUserAfterSignUp(ctx context.Context, userUUID uuid.UUID, chatID, userID int64) error {
-	currentTime := time.Now().UTC()
-	query := `UPDATE telegram_users SET tg_user_id = $1, tg_chat_id = $2, updated_at = $3 WHERE user_id = $4`
-	_, err := r.db.ExecContext(ctx, query, userID, chatID, currentTime, userUUID.String())
-	if err != nil {
-		return fmt.Errorf("failed to insert in telegram_users: %w", err)
-	}
-
-	return nil
-}
-
-func (r *Repository) SelectUserAuthInfoByUUID(ctx context.Context, userUUID string) (model.UserAuthInfo, error) {
-	query := `SELECT id, role FROM users WHERE id = $1`
-	row := r.db.QueryRowContext(ctx, query, userUUID)
-	if row.Err() != nil {
-		return model.UserAuthInfo{}, fmt.Errorf("failed to select user: %w", row.Err())
-	}
-
-	var id uuid.UUID
-	var role string
-	err := row.Scan(&id, &role)
-	if err != nil {
-		return model.UserAuthInfo{}, fmt.Errorf("failed to select user: %w", err)
-	}
-
-	return model.UserAuthInfo{UserUUID: id, Role: model.UserRole(role)}, nil
-}
-
-func (r *Repository) InsertIntoUserV2(ctx context.Context, in model.SignUpV2Data) (uuid.UUID, error) {
-	currentTime := time.Now().UTC()
-	query := `INSERT INTO users (login, password_hash, created_at) VALUES ($1, $2, $3) RETURNING id`
-	row := r.db.QueryRowContext(ctx, query, in.Login, in.Password, currentTime)
-	if row.Err() != nil {
-		return uuid.UUID{}, fmt.Errorf("failed to insert user: %w", row.Err())
-	}
-
-	var id uuid.UUID
-	err := row.Scan(&id)
-	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("failed to insert user: %w", err)
-	}
-
-	return id, nil
-}
-
-func (r *Repository) UpdateUser(ctx context.Context, user dto.UpdateUserRequest, userUUID string) error {
-	currentTime := time.Now().UTC()
-	query := `UPDATE users SET name = $1, surname = $2, updated_at = $3 WHERE id = $4`
-	_, err := r.db.ExecContext(ctx, query, user.Name, user.Surname, currentTime, userUUID)
-	if err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
-	}
-
-	return nil
-}
-
-func (r *Repository) SelectAdminUserByUserUUID(ctx context.Context, userUUID string) (model.AdminUserInfo, error) {
+func (r *Repository) SelectUsersWithTokens(ctx context.Context, limit int32, page int32) ([]*authpb.UserGUWR, error) {
 	query := `
-SELECT 
+SELECT
     u.id,
-    u.login,
-    u.name,
-    u.surname, 
+    u.email,
     u.role,
-    tu.tg_username,
-    u.created_at,
-    u.updated_at 
-FROM users AS u
-JOIN telegram_users AS tu ON u.id = tu.user_id
-WHERE u.id = $1`
-	row := r.db.QueryRowContext(ctx, query, userUUID)
-	if row.Err() != nil {
-		return model.AdminUserInfo{}, fmt.Errorf("failed to select user: %w", row.Err())
-	}
-
-	var user model.AdminUserInfo
-	err := row.Scan(
-		&user.UUID,
-		&user.Login,
-		&user.Name,
-		&user.Surname,
-		&user.Role,
-		&user.Telegram.Username,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+    json_agg(
+        json_build_object(
+            'token', t.token,
+            'expires_at', t.expires_at
+        )
+    ) AS tokens
+FROM (
+    SELECT
+        u_inner.id,
+        u_inner.email,
+        u_inner.role,
+        ROW_NUMBER() OVER (ORDER BY u_inner.created_at ASC) as rn
+    FROM users u_inner
+    INNER JOIN tokens t_inner ON u_inner.id = t_inner.user_id
+) u
+INNER JOIN tokens t ON u.id = t.user_id
+WHERE u.rn > ($1 - 1) * $2 AND u.rn <= $1 * $2
+GROUP BY u.id, u.email, u.role, u.rn
+ORDER BY u.rn ASC
+`
+	rows, err := r.db.QueryContext(ctx, query, limit, page)
 	if err != nil {
-		return model.AdminUserInfo{}, fmt.Errorf("failed to select user: %w", err)
+		return nil, fmt.Errorf("failed r.db.QueryContext: %w", err)
 	}
 
-	return user, nil
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			log.Error().Msgf("failed rows.Close: %v", err)
+		}
+	}(rows)
+
+	var users []*authpb.UserGUWR
+	for rows.Next() {
+		var id, email, role string
+		var tokensJSON []byte
+
+		if err = rows.Scan(&id, &email, &role, &tokensJSON); err != nil {
+			return nil, fmt.Errorf("rows.Scan tokensJSON: %w", err)
+		}
+
+		var tokens []*authpb.TokenGUWR
+
+		if err = json.Unmarshal(tokensJSON, &tokens); err != nil {
+			return nil, fmt.Errorf("json.Unmarshal tokens: %w", err)
+		}
+
+		user := &authpb.UserGUWR{
+			Id:     id,
+			Email:  email,
+			Role:   role,
+			Tokens: tokens,
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
-func (r *Repository) UpdateUserPassword(ctx context.Context, req dto.ChangePasswordRequest, userUUID string) error {
-	query := `UPDATE users SET password_hash = $1, updated_at = $2 WHERE id = $3`
-	_, err := r.db.ExecContext(ctx, query, req.NewPassword, time.Now().UTC(), userUUID)
-	if err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
+func (r *Repository) SelectUsersWithProfilesCount(ctx context.Context) (int32, error) {
+	query := `SELECT COUNT(*) FROM users u INNER JOIN profiles p ON u.id = p.user_id`
+	row := r.db.QueryRowContext(ctx, query)
+	if row.Err() != nil {
+		return 0, fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
 	}
 
-	return nil
+	var count int32
+	err := row.Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed row.Scan: %w", err)
+	}
+
+	return count, nil
+}
+
+func (r *Repository) SelectUsersWithProfiles(ctx context.Context, limit int32, page int32) ([]model.UserWithProfile, error) {
+	offset := (int(page) - 1) * int(limit)
+
+	query := `
+SELECT
+	u.id,
+	u.email,
+	u.role,
+	p.first_name,
+	p.last_name,
+	p.patronymic,
+	p.date_of_birth,
+	p.email,
+	p.phone,
+	p.address
+FROM users u
+INNER JOIN profiles p ON u.id = p.user_id
+ORDER BY u.created_at ASC
+OFFSET $1 LIMIT $2;
+`
+	rows, err := r.db.QueryContext(ctx, query, offset, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed r.db.QueryContext: %w", err)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed rows.Err(): %w", err)
+	}
+
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
+		if err != nil {
+			log.Error().Msgf("failed rows.Close: %v", err)
+		}
+	}(rows)
+
+	var uwps []model.UserWithProfile
+
+	for rows.Next() {
+		var uwp model.UserWithProfile
+		err = rows.Scan(
+			&uwp.ID,
+			&uwp.Email,
+			&uwp.Role,
+			&uwp.FirstName,
+			&uwp.LastName,
+			&uwp.Patronymic,
+			&uwp.DateOfBirth,
+			&uwp.ProfileEmail,
+			&uwp.Phone,
+			&uwp.Address,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed TempUser rows.Scan: %w", err)
+		}
+
+		uwps = append(uwps, uwp)
+	}
+
+	return uwps, nil
 }

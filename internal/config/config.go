@@ -31,6 +31,15 @@ type Config struct {
 		Host string `yaml:"host" validate:"required"`
 		Port int    `yaml:"port" validate:"required,numeric"`
 	} `yaml:"redis"`
+	RabbitMQ struct {
+		URL        string `yaml:"url" validate:"required"`
+		QueueName  string `yaml:"queue_name" validate:"required"`
+		Durable    bool   `yaml:"durable" validate:"required,bool"`
+		AutoDelete bool   `yaml:"auto_delete" validate:"required,bool"`
+		Exclusive  bool   `yaml:"exclusive" validate:"required,bool"`
+		NoWait     bool   `yaml:"no_wait" validate:"required,bool"`
+	} `yaml:"rabbitmq"`
+	TelegramToken string `yaml:"telegram_token" validate:"required"`
 }
 
 func LoadConfig() (*Config, error) {

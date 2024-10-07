@@ -186,3 +186,16 @@ OFFSET $1 LIMIT $2;
 
 	return uwps, nil
 }
+
+func (r *Repository) SelectUserByEmail(ctx context.Context, email string) (model.User, error) {
+	query := `SELECT id, email, password_hash, role FROM users WHERE email = $1`
+	row := r.db.QueryRowContext(ctx, query, email)
+
+	var user model.User
+	err := row.Scan(&user.UUID, &user.Email, &user.PasswordHash, &user.Role)
+	if err != nil {
+		return model.User{}, fmt.Errorf("failed row.Scan: %w", err)
+	}
+
+	return user, nil
+}

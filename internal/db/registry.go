@@ -15,6 +15,8 @@ type RepositoryInterface interface {
 	InsertIntoUsers(ctx context.Context, in model.User) (uuid.UUID, error)
 	InsertIntoProfiles(ctx context.Context, in model.Profile) (uuid.UUID, error)
 	InsertIntoTelegramUsers(ctx context.Context, in model.TelegramUser) (uuid.UUID, error)
+	SelectFromTelegramUsersByUser(ctx context.Context, userUUID uuid.UUID) (model.TelegramUser, error)
+	SelectUserByEmail(ctx context.Context, email string) (model.User, error)
 	SelectUsersWithTokensCount(ctx context.Context) (int32, error)
 	SelectUsersWithTokens(ctx context.Context, limit int32, page int32) ([]*authpb.UserGUWR, error)
 	SelectUsersWithProfilesCount(ctx context.Context) (int32, error)

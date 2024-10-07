@@ -383,10 +383,6 @@ func (m *SignInResponse) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for AccessToken
-
-	// no validation rules for RefreshToken
-
 	if len(errors) > 0 {
 		return SignInResponseMultiError(errors)
 	}
@@ -1677,3 +1673,213 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetUsersWithProfilesResponseValidationError{}
+
+// Validate checks the field values on SignInVerifyRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *SignInVerifyRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on SignInVerifyRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// SignInVerifyRequestMultiError, or nil if none found.
+func (m *SignInVerifyRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SignInVerifyRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	if len(errors) > 0 {
+		return SignInVerifyRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// SignInVerifyRequestMultiError is an error wrapping multiple validation
+// errors returned by SignInVerifyRequest.ValidateAll() if the designated
+// constraints aren't met.
+type SignInVerifyRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SignInVerifyRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SignInVerifyRequestMultiError) AllErrors() []error { return m }
+
+// SignInVerifyRequestValidationError is the validation error returned by
+// SignInVerifyRequest.Validate if the designated constraints aren't met.
+type SignInVerifyRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SignInVerifyRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SignInVerifyRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SignInVerifyRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SignInVerifyRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SignInVerifyRequestValidationError) ErrorName() string {
+	return "SignInVerifyRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SignInVerifyRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSignInVerifyRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SignInVerifyRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SignInVerifyRequestValidationError{}
+
+// Validate checks the field values on SignInVerifyResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *SignInVerifyResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on SignInVerifyResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// SignInVerifyResponseMultiError, or nil if none found.
+func (m *SignInVerifyResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SignInVerifyResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for AccessToken
+
+	// no validation rules for RefreshToken
+
+	if len(errors) > 0 {
+		return SignInVerifyResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// SignInVerifyResponseMultiError is an error wrapping multiple validation
+// errors returned by SignInVerifyResponse.ValidateAll() if the designated
+// constraints aren't met.
+type SignInVerifyResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SignInVerifyResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SignInVerifyResponseMultiError) AllErrors() []error { return m }
+
+// SignInVerifyResponseValidationError is the validation error returned by
+// SignInVerifyResponse.Validate if the designated constraints aren't met.
+type SignInVerifyResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SignInVerifyResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SignInVerifyResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SignInVerifyResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SignInVerifyResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SignInVerifyResponseValidationError) ErrorName() string {
+	return "SignInVerifyResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SignInVerifyResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSignInVerifyResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SignInVerifyResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SignInVerifyResponseValidationError{}

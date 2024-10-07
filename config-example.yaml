@@ -4,8 +4,6 @@ grpc_server:
   port: 5011
 http_server:
   port: 5012
-swagger_server:
-  port: 5013
 postgresql:
   host: "localhost"
   port: 5454
@@ -15,3 +13,11 @@ postgresql:
 redis:
   host: "localhost"
   port: 6379
+rabbitmq:
+  url: "amqp://guest:guest@localhost:5672/"
+  queue_name: "notify_telegram_auth"
+  durable: true
+  auto_delete: false
+  exclusive: false
+  no_wait: false
+telegram_token: "234:dssfdFDSf"

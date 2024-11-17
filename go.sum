@@ -114,6 +114,8 @@ github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
 github.com/patyukin/mbs-pkg v1.1.68 h1:KzLLvFTW6wHA95oQ4gZLUh+qs5yTYpChYnmfZwOMh7o=
 github.com/patyukin/mbs-pkg v1.1.68/go.mod h1:YDyYYulj6A2e8UAOgNDfRDHSPCi6Ug5ayfH1+SwjiNg=
+github.com/patyukin/mbs-pkg v1.1.69 h1:HfQEgYbdTVJ7/nVZPhlXgAuMahuRCOReQDArb1E4EsA=
+github.com/patyukin/mbs-pkg v1.1.69/go.mod h1:YDyYYulj6A2e8UAOgNDfRDHSPCi6Ug5ayfH1+SwjiNg=
 github.com/paulmach/orb v0.11.1 h1:3koVegMC4X/WeiXYz9iswopaTwMem53NzTJuTF20JzU=
 github.com/paulmach/orb v0.11.1/go.mod h1:5mULz1xQfs3bmQm63QEJA6lNGujuRafwA5S/EnuLaLU=
 github.com/paulmach/protoscan v0.2.1/go.mod h1:SpcSwydNLrxUGSDvXvO0P7g7AuhJ7lcKfDlhJCDw2gY=

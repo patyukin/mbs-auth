@@ -91,8 +91,10 @@ func main() {
 		[]string{rabbitmq.AuthSignInConfirmCodeRouteKey, rabbitmq.AuthSignUpResultMessageRouteKey},
 	)
 	if err != nil {
-		log.Fatal().Msgf("failed to bind AuthNotifyQueue to exchange with - AuthSignInConfirmCodeRouteKey, "+
-			"AuthSignUpResultMessageRouteKey: %v", err)
+		log.Fatal().Msgf(
+			"failed to bind AuthNotifyQueue to exchange with - AuthSignInConfirmCodeRouteKey, "+
+				"AuthSignUpResultMessageRouteKey: %v", err,
+		)
 	}
 
 	chr, err := cacher.New(ctx, cfg.RedisDSN)

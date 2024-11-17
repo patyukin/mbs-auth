@@ -4,9 +4,20 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
-	authpb "github.com/patyukin/mbs-auth/pkg/auth_v1"
+	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 	"time"
 )
+
+func TgUserModelFromSignUpRequest(userUUID uuid.UUID) TelegramUser {
+	return TelegramUser{
+		UserUUID:       userUUID,
+		TelegramLogin:  sql.NullString{},
+		CreatedAt:      time.Now().UTC(),
+		UpdatedAt:      sql.NullTime{},
+		TelegramUserID: sql.NullInt64{},
+		TelegramChatID: sql.NullInt64{},
+	}
+}
 
 func ProfileModelFromSignUpRequest(userUUID uuid.UUID, in *authpb.SignUpRequest) (Profile, error) {
 	var Patronymic sql.NullString
@@ -15,7 +26,7 @@ func ProfileModelFromSignUpRequest(userUUID uuid.UUID, in *authpb.SignUpRequest)
 		Patronymic.Valid = true
 	}
 
-	layout := "02-01-2006"
+	layout := "2006-01-02"
 	dateOfBirth, err := time.Parse(layout, in.DateOfBirth)
 	if err != nil {
 		return Profile{}, fmt.Errorf("failed time.Parse with in.DateOfBirth: %w", err)
@@ -50,7 +61,6 @@ func UsersWithProfilesResponseFromUserWithProfile(u []UserWithProfile) []*authpb
 		user := &authpb.UserGUWP{
 			Id:      v.ID,
 			Email:   v.Email,
-			Role:    v.Role,
 			Profile: profile,
 		}
 
@@ -60,19 +70,10 @@ func UsersWithProfilesResponseFromUserWithProfile(u []UserWithProfile) []*authpb
 	return users
 }
 
-func TelegramUserModelFromSignUpRequest(userUUID uuid.UUID, in *authpb.SignUpRequest) (TelegramUser, error) {
-	return TelegramUser{
-		UserUUID:      userUUID,
-		TelegramLogin: in.TelegramLogin,
-		CreatedAt:     time.Now().UTC(),
-	}, nil
-}
-
 func UserModelFromSignUpRequest(in *authpb.SignUpRequest) User {
 	return User{
 		Email:        in.Email,
 		PasswordHash: in.Password,
-		Role:         "user",
 		CreatedAt:    time.Now().UTC(),
 	}
 }
@@ -82,7 +83,6 @@ func SignUpRequestToUserModel(in *authpb.SignUpRequest) *User {
 		UUID:         uuid.New(),
 		Email:        in.Email,
 		PasswordHash: in.Password,
-		Role:         "user",
 		CreatedAt:    time.Now().UTC(),
 	}
 }

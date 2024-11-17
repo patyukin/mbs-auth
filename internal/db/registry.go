@@ -5,35 +5,26 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/patyukin/mbs-auth/internal/model"
-	authpb "github.com/patyukin/mbs-auth/pkg/auth_v1"
 	"github.com/rs/zerolog/log"
 )
 
-type RepositoryInterface interface {
-	InsertIntoUsers(ctx context.Context, in model.User) (uuid.UUID, error)
-	InsertIntoProfiles(ctx context.Context, in model.Profile) (uuid.UUID, error)
-	InsertIntoTelegramUsers(ctx context.Context, in model.TelegramUser) (uuid.UUID, error)
-	SelectFromTelegramUsersByUser(ctx context.Context, userUUID uuid.UUID) (model.TelegramUser, error)
-	SelectUserByEmail(ctx context.Context, email string) (model.User, error)
-	SelectUsersWithTokensCount(ctx context.Context) (int32, error)
-	SelectUsersWithTokens(ctx context.Context, limit int32, page int32) ([]*authpb.UserGUWR, error)
-	SelectUsersWithProfilesCount(ctx context.Context) (int32, error)
-	SelectUsersWithProfiles(ctx context.Context, limit int32, page int32) ([]model.UserWithProfile, error)
+type QueryExecutor interface {
+	ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error)
+	QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row
 }
 
 type Registry struct {
 	db *sql.DB
 }
 
-func (registry *Registry) GetRepo() RepositoryInterface {
+func (registry *Registry) GetRepo() *Repository {
 	return &Repository{
 		db: registry.db,
 	}
 }
 
-type Handler func(ctx context.Context, repo RepositoryInterface) error
+type Handler func(ctx context.Context, repo *Repository) error
 
 func New(db *sql.DB) *Registry {
 	return &Registry{db: db}

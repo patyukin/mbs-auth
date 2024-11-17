@@ -4,11 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/patyukin/mbs-auth/internal/config"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
-	"net"
-	"strconv"
 	"time"
 )
 
@@ -16,8 +13,8 @@ type Cacher struct {
 	client *redis.Client
 }
 
-func New(ctx context.Context, cfg *config.Config) (*Cacher, error) {
-	c := redis.NewClient(&redis.Options{Addr: net.JoinHostPort(cfg.Redis.Host, strconv.Itoa(cfg.Redis.Port))})
+func New(ctx context.Context, dsn string) (*Cacher, error) {
+	c := redis.NewClient(&redis.Options{Addr: dsn})
 
 	err := c.Ping(ctx).Err()
 	if err != nil {
@@ -37,7 +34,7 @@ func (r *Cacher) GetVerificationCode(ctx context.Context, telegramUserID int) (s
 }
 
 func (r *Cacher) SetSignUpCode(ctx context.Context, tgUserName string, code, userUUID uuid.UUID, expiration time.Duration) error {
-	return r.client.Set(ctx, "user:"+tgUserName, fmt.Sprintf("%s:%s", code.String(), userUUID.String()), expiration).Err()
+	return r.client.Set(ctx, "user:"+tgUserName, fmt.Sprintf("%s:%s", code.String(), userUUID), expiration).Err()
 }
 
 func (r *Cacher) GetSignUpCode(ctx context.Context, tgUserName string) (string, error) {
@@ -74,4 +71,8 @@ func (r *Cacher) GetTempCode(ctx context.Context, userID string) (string, error)
 
 func (r *Cacher) DeleteTempCode(ctx context.Context, userID string) error {
 	return r.client.Del(ctx, "tempcode:"+userID).Err()
+}
+
+func (r *Cacher) Close() error {
+	return r.client.Close()
 }

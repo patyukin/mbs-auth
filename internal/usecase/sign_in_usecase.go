@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/patyukin/mbs-auth/internal/model"
-	authpb "github.com/patyukin/mbs-auth/pkg/auth_v1"
+	rabbitmqModel "github.com/patyukin/mbs-pkg/pkg/model"
+	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
 )
 
@@ -16,10 +18,10 @@ func (u *UseCase) SignIn(ctx context.Context, in *authpb.SignInRequest) (*authpb
 	var telegramUser model.TelegramUser
 	var msg []byte
 
-	err = u.registry.ReadCommitted(ctx, func(ctx context.Context, repo db.RepositoryInterface) error {
-		user, err = repo.SelectUserByEmail(ctx, in.Email)
+	err = u.registry.ReadCommitted(ctx, func(ctx context.Context, repo *db.Repository) error {
+		user, err = repo.SelectRegisteredUserByEmail(ctx, in.Email)
 		if err != nil {
-			return fmt.Errorf("failed to select user: %w", err)
+			return fmt.Errorf("failed to select user in repo.SelectUserByEmail: %w", err)
 		}
 
 		err = u.ComparePasswords([]byte(user.PasswordHash), in.Password)
@@ -47,7 +49,9 @@ func (u *UseCase) SignIn(ctx context.Context, in *authpb.SignInRequest) (*authpb
 			}
 		}
 
-		err = u.chr.Set2FACode(ctx, code, user.UUID.String(), 5*time.Minute)
+		expiratedTime := 24 * time.Hour
+
+		err = u.chr.Set2FACode(ctx, code, user.UUID.String(), expiratedTime)
 		if err != nil {
 			return fmt.Errorf("failed to set 2fa code: %w", err)
 		}
@@ -61,12 +65,9 @@ func (u *UseCase) SignIn(ctx context.Context, in *authpb.SignInRequest) (*authpb
 			return fmt.Errorf("telegram chat id not found")
 		}
 
-		payload := struct {
-			ChatId int64  `json:"chat_id"`
-			Code   string `json:"code"`
-		}{
+		payload := rabbitmqModel.AuthSignInCode{
 			Code:   code,
-			ChatId: telegramUser.TelegramChatID.Int64,
+			ChatID: telegramUser.TelegramChatID.Int64,
 		}
 
 		msg, err = json.Marshal(payload)
@@ -74,7 +75,7 @@ func (u *UseCase) SignIn(ctx context.Context, in *authpb.SignInRequest) (*authpb
 			return fmt.Errorf("failed to marshal payload: %w", err)
 		}
 
-		err = u.prdcr.SendMessage(msg)
+		err = u.prdcr.PublishAuthSignInCode(ctx, msg, amqp.Table{})
 		if err != nil {
 			return fmt.Errorf("failed u.prdcr.SendMessage: %w", err)
 		}

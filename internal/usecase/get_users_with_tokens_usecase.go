@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/patyukin/mbs-auth/internal/db"
-	authpb "github.com/patyukin/mbs-auth/pkg/auth_v1"
+	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 )
 
 func (u *UseCase) GetUsersWithTokens(ctx context.Context, in *authpb.GetUsersWithTokensRequest) (*authpb.GetUsersWithTokensResponse, error) {
@@ -18,7 +18,7 @@ func (u *UseCase) GetUsersWithTokens(ctx context.Context, in *authpb.GetUsersWit
 
 	var response *authpb.GetUsersWithTokensResponse
 
-	err := u.registry.ReadCommitted(ctx, func(ctx context.Context, repo db.RepositoryInterface) error {
+	err := u.registry.ReadCommitted(ctx, func(ctx context.Context, repo *db.Repository) error {
 		total, err := repo.SelectUsersWithProfilesCount(ctx)
 		if err != nil {
 			return fmt.Errorf("failed repo.SelectUsersWithProfilesCount: %w", err)

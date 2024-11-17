@@ -2,10 +2,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	"gopkg.in/yaml.v3"
-	"log"
-	"os"
+	configLoader "github.com/patyukin/mbs-pkg/pkg/config"
 )
 
 type Config struct {
@@ -14,60 +11,24 @@ type Config struct {
 	HttpServer  struct {
 		Port int `yaml:"port" validate:"required,numeric"`
 	} `yaml:"http_server" validate:"required"`
-	SwaggerServer struct {
-		Port int `yaml:"port" validate:"required,numeric"`
-	} `yaml:"swagger_server" validate:"required"`
 	GRPCServer struct {
-		Port int `yaml:"port" validate:"required,numeric"`
+		Port              int `yaml:"port" validate:"required,numeric"`
+		MaxConnectionIdle int `yaml:"max_connection_idle"`
+		Timeout           int `yaml:"timeout"`
+		MaxConnectionAge  int `yaml:"max_connection_age"`
 	} `yaml:"grpc_server" validate:"required"`
-	PostgreSQL struct {
-		Host     string `yaml:"host" validate:"required"`
-		Port     int    `yaml:"port" validate:"required,numeric"`
-		User     string `yaml:"user" validate:"required"`
-		Password string `yaml:"password" validate:"required"`
-		Name     string `yaml:"name" validate:"required"`
-	} `yaml:"postgresql"`
-	Redis struct {
-		Host string `yaml:"host" validate:"required"`
-		Port int    `yaml:"port" validate:"required,numeric"`
-	} `yaml:"redis"`
-	RabbitMQ struct {
-		URL        string `yaml:"url" validate:"required"`
-		QueueName  string `yaml:"queue_name" validate:"required"`
-		Durable    bool   `yaml:"durable" validate:"required,bool"`
-		AutoDelete bool   `yaml:"auto_delete" validate:"required,bool"`
-		Exclusive  bool   `yaml:"exclusive" validate:"required,bool"`
-		NoWait     bool   `yaml:"no_wait" validate:"required,bool"`
-	} `yaml:"rabbitmq"`
-	TelegramToken string `yaml:"telegram_token" validate:"required"`
+	PostgreSQLDSN   string `yaml:"postgresql_dsn" validate:"required"`
+	RedisDSN        string `yaml:"redis_dsn" validate:"required"`
+	RabbitMQUrl     string `yaml:"rabbitmq_url" validate:"required"`
+	TelegramBotName string `yaml:"telegram_bot_name" validate:"required"`
+	TracerHost      string `yaml:"tracer_host" validate:"required"`
 }
 
 func LoadConfig() (*Config, error) {
-	yamlConfigFilePath := os.Getenv("YAML_CONFIG_FILE_PATH")
-	if yamlConfigFilePath == "" {
-		return nil, fmt.Errorf("yaml config file path is not set")
-	}
-
-	f, err := os.Open(yamlConfigFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to open config file: %w", err)
-	}
-
-	defer func(f *os.File) {
-		if err = f.Close(); err != nil {
-			log.Printf("unable to close config file: %v", err)
-		}
-	}(f)
-
 	var config Config
-	decoder := yaml.NewDecoder(f)
-	if err = decoder.Decode(&config); err != nil {
-		return nil, fmt.Errorf("unable to decode config file: %w", err)
-	}
-
-	validate := validator.New()
-	if err = validate.Struct(&config); err != nil {
-		return nil, fmt.Errorf("config validation failed: %w", err)
+	err := configLoader.LoadConfig(&config)
+	if err != nil {
+		return nil, fmt.Errorf("error loading config: %w", err)
 	}
 
 	return &config, nil

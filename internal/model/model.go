@@ -10,19 +10,18 @@ type User struct {
 	UUID         uuid.UUID    `json:"id"`
 	Email        string       `json:"email"`
 	PasswordHash string       `json:"password_hash"`
-	Role         string       `json:"role"`
 	CreatedAt    time.Time    `json:"created_at"`
 	UpdatedAt    sql.NullTime `json:"updated_at"`
 }
 
 type TelegramUser struct {
-	UUID           uuid.UUID     `json:"id"`
-	UserUUID       uuid.UUID     `json:"user_id"`
-	TelegramLogin  string        `json:"telegram_login"`
-	TelegramUserID sql.NullInt64 `json:"telegram_id"`
-	TelegramChatID sql.NullInt64 `json:"chat_id"`
-	CreatedAt      time.Time     `json:"created_at"`
-	UpdatedAt      sql.NullTime  `json:"updated_at"`
+	UUID           uuid.UUID      `json:"id"`
+	UserUUID       uuid.UUID      `json:"user_id"`
+	TelegramLogin  sql.NullString `json:"telegram_login"`
+	TelegramUserID sql.NullInt64  `json:"telegram_id"`
+	TelegramChatID sql.NullInt64  `json:"chat_id"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      sql.NullTime   `json:"updated_at"`
 }
 
 type Token struct {
@@ -58,4 +57,9 @@ type UserWithProfile struct {
 	ProfileEmail string
 	Phone        string
 	Address      string
+}
+
+type UserRole struct {
+	UserID string `yaml:"user_id"`
+	RoleID string `yaml:"role_id"`
 }

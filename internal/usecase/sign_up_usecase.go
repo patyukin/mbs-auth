@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/patyukin/mbs-auth/internal/model"
-	authpb "github.com/patyukin/mbs-auth/pkg/auth_v1"
+	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 	"strings"
 	"time"
 )
@@ -16,12 +16,21 @@ func (u *UseCase) SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb
 	var userUUID, code uuid.UUID
 	var user model.User
 	var profile model.Profile
-	var tgUser model.TelegramUser
 
-	err = u.registry.ReadCommitted(ctx, func(ctx context.Context, repo db.RepositoryInterface) error {
+	err = u.registry.ReadCommitted(ctx, func(ctx context.Context, repo *db.Repository) error {
 		in.Password, err = u.HashPassword(in.Password)
 		if err != nil {
 			return fmt.Errorf("failed to hash password: %w", err)
+		}
+
+		// find unique fields
+		exists, existsErr := repo.SelectUserWithExistsEmail(ctx, in.Email)
+		if existsErr != nil {
+			return fmt.Errorf("failed to check unique fields: %w", existsErr)
+		}
+
+		if exists {
+			return fmt.Errorf("user with email %s already exists", in.Email)
 		}
 
 		user = model.UserModelFromSignUpRequest(in)
@@ -40,8 +49,7 @@ func (u *UseCase) SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb
 			return fmt.Errorf("failed repo.InsertIntoProfiles: %w", err)
 		}
 
-		tgUser, err = model.TelegramUserModelFromSignUpRequest(userUUID, in)
-		_, err = repo.InsertIntoTelegramUsers(ctx, tgUser)
+		_, err = repo.InsertIntoTelegramUsers(ctx, userUUID, in.TelegramLogin)
 		if err != nil {
 			return fmt.Errorf("failed repo.InsertIntoTelegramUsers: %w", err)
 		}

@@ -5,43 +5,46 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/patyukin/mbs-auth/internal/config"
 	"github.com/patyukin/mbs-auth/internal/db"
-	"github.com/patyukin/mbs-auth/internal/telegram"
+	"github.com/patyukin/mbs-auth/internal/model"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
 )
 
-type Registry interface {
-	GetRepo() db.RepositoryInterface
-	ReadCommitted(ctx context.Context, f db.Handler) error
-}
-
 type Producer interface {
-	SendMessage(body []byte) error
+	PublishDQLMessage(ctx context.Context, body []byte) error
+	PublishAuthSignUpResultMessage(ctx context.Context, body []byte, headers amqp.Table) error
+	PublishAuthSignInCode(ctx context.Context, body []byte, headers amqp.Table) error
 }
 
 type Cacher interface {
 	SetSignUpCode(ctx context.Context, tgUserName string, code, userUUID uuid.UUID, expiration time.Duration) error
+	GetSignUpCode(ctx context.Context, tgUserName string) (string, error)
+	DeleteSignUpCode(ctx context.Context, tgUserName string) error
 	Exists2FACode(ctx context.Context, code string) (int64, error)
 	Set2FACode(ctx context.Context, code, userID string, expiration time.Duration) error
 	Get2FACode(ctx context.Context, code string) (string, error)
+	Delete2FACode(ctx context.Context, code string) error
 }
 
 type UseCase struct {
-	registry  Registry
+	registry  *db.Registry
 	prdcr     Producer
 	chr       Cacher
-	bot       *telegram.Bot
+	bot       string
 	jwtSecret []byte
 }
 
-func New(registry Registry, prdcr Producer, chr Cacher, bot *telegram.Bot, jwtSecret string) *UseCase {
+func New(registry *db.Registry, prdcr Producer, chr Cacher, cfg *config.Config) *UseCase {
 	return &UseCase{
 		registry:  registry,
 		prdcr:     prdcr,
 		chr:       chr,
-		bot:       bot,
-		jwtSecret: []byte(jwtSecret),
+		bot:       cfg.TelegramBotName,
+		jwtSecret: []byte(cfg.JwtSecret),
 	}
 }
 
@@ -50,8 +53,9 @@ func (u *UseCase) GetJWTToken() []byte {
 }
 
 func (u *UseCase) GetTelegramBot() string {
-	return u.bot.API.Self.UserName
+	return u.bot
 }
+
 func (u *UseCase) GenerateSignInCode() (string, error) {
 	bytes := make([]byte, 30)
 	_, err := rand.Read(bytes)
@@ -60,4 +64,15 @@ func (u *UseCase) GenerateSignInCode() (string, error) {
 	}
 
 	return hex.EncodeToString(bytes), nil
+}
+
+func (u *UseCase) generateJWT(user model.User) (string, error) {
+	claims := jwt.MapClaims{
+		"id":  user.UUID.String(),
+		"exp": time.Now().Add(1 * time.Hour).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString(u.jwtSecret)
 }

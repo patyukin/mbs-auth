@@ -14,6 +14,9 @@ type UseCase interface {
 	GetUsersWithTokens(ctx context.Context, in *authpb.GetUsersWithTokensRequest) (*authpb.GetUsersWithTokensResponse, error)
 	GetUsersWithProfiles(ctx context.Context, in *authpb.GetUsersWithProfilesRequest) (*authpb.GetUsersWithProfilesResponse, error)
 	AddUserRole(ctx context.Context, in *authpb.AddUserRoleRequest) (*authpb.AddUserRoleResponse, error)
+	Authorize(ctx context.Context, in *authpb.AuthorizeRequest) (*authpb.AuthorizeResponse, error)
+	RefreshToken(ctx context.Context, in *authpb.RefreshTokenRequest) (*authpb.RefreshTokenResponse, error)
+	GetUserInfoUseCase(ctx context.Context, in *authpb.GetUserInfoRequest) (*authpb.GetUserInfoResponse, error)
 }
 
 type Server struct {
@@ -25,10 +28,6 @@ func New(uc UseCase) *Server {
 	return &Server{
 		uc: uc,
 	}
-}
-
-func (s *Server) GetUserByUUID(ctx context.Context, in *authpb.GetUserByUUIDRequest) (*authpb.GetUserByUUIDResponse, error) {
-	panic("qwe")
 }
 
 func (s *Server) GetUsersWithTokens(ctx context.Context, in *authpb.GetUsersWithTokensRequest) (*authpb.GetUsersWithTokensResponse, error) {

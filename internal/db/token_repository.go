@@ -34,3 +34,20 @@ func (r *Repository) CleanExpiredTokens(ctx context.Context) error {
 
 	return nil
 }
+
+func (r *Repository) SelectByID(ctx context.Context, ID string) (string, error) {
+	timeNow := time.Now().UTC()
+	query := `SELECT user_id FROM tokens WHERE token = $1 AND expires_at > $2`
+	row := r.db.QueryRowContext(ctx, query, ID, timeNow)
+	if row.Err() != nil {
+		return "", fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
+	}
+
+	var userID string
+	err := row.Scan(&userID)
+	if err != nil {
+		return "", fmt.Errorf("failed row.Scan: %w", err)
+	}
+
+	return userID, nil
+}

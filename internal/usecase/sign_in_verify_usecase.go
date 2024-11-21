@@ -29,7 +29,7 @@ func (u *UseCase) SignInVerify(ctx context.Context, in *authpb.SignInVerifyReque
 			return fmt.Errorf("failed repo.SelectUserByUUID: %w", err)
 		}
 
-		token, err = u.generateJWT(user)
+		token, err = u.generateJWT(user.UUID.String())
 		if err != nil {
 			return fmt.Errorf("failed u.generateJWT: %w", err)
 		}

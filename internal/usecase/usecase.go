@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/config"
 	"github.com/patyukin/mbs-auth/internal/db"
-	"github.com/patyukin/mbs-auth/internal/model"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
 )
@@ -66,9 +65,9 @@ func (u *UseCase) GenerateSignInCode() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-func (u *UseCase) generateJWT(user model.User) (string, error) {
+func (u *UseCase) generateJWT(userID string) (string, error) {
 	claims := jwt.MapClaims{
-		"id":  user.UUID.String(),
+		"id":  userID,
 		"exp": time.Now().Add(1 * time.Hour).Unix(),
 	}
 

@@ -302,3 +302,49 @@ func (r *Repository) SelectUserWithExistsEmail(ctx context.Context, email string
 
 	return true, nil
 }
+
+func (r *Repository) SelectUserInfoByID(ctx context.Context, userID string) (*authpb.UserInfo, error) {
+	query := `
+SELECT
+		u.id,
+		u.email,
+		p.first_name,
+		p.last_name,
+		p.patronymic,
+		p.date_of_birth,
+		p.phone,
+		p.address,
+		tu.telegram_login,
+		tu.telegram_id,
+		tu.chat_id,
+		TO_CHAR(u.created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at
+FROM users AS u
+INNER JOIN telegram_users AS tu ON u.id = tu.user_id
+INNER JOIN profiles AS p ON u.id = p.user_id
+WHERE u.id = $1`
+	row := r.db.QueryRowContext(ctx, query, userID)
+	if row.Err() != nil {
+		return nil, fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
+	}
+
+	var user authpb.UserInfo
+	err := row.Scan(
+		&user.UserId,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.Patronymic,
+		&user.DateOfBirth,
+		&user.Phone,
+		&user.Address,
+		&user.TelegramLogin,
+		&user.TelegramId,
+		&user.ChatId,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed row.Scan: %w", err)
+	}
+
+	return &user, nil
+}

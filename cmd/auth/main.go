@@ -47,7 +47,7 @@ func main() {
 		log.Fatal().Msgf("failed to init metrics: %v", err)
 	}
 
-	_, closer, err := tracing.InitJaeger(fmt.Sprintf("localhost:6831"), ServiceName)
+	_, closer, err := tracing.InitJaeger(fmt.Sprintf("jaeger:6831"), ServiceName)
 	if err != nil {
 		log.Fatal().Msgf("failed to initialize tracer: %v", err)
 	}
@@ -108,7 +108,6 @@ func main() {
 
 	// grpc server
 	s := server.NewGRPCServer(cfg)
-
 	reflection.Register(s)
 	desc.RegisterAuthServiceServer(s, srv)
 	grpcPrometheus.Register(s)
@@ -182,8 +181,4 @@ func main() {
 	}
 
 	cj.Stop()
-
-	//if err = tracerProvider.Shutdown(ctx); err != nil {
-	//	log.Error().Msgf("Error shutting down tracer provider: %v", err)
-	//}
 }

@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (u *UseCase) SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error) {
+func (u *UseCase) SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error) {
 	var err error
 	var userUUID, code uuid.UUID
 	var user model.User
@@ -71,7 +71,6 @@ func (u *UseCase) SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb
 	}
 
 	return &authpb.SignUpResponse{
-		UserId: userUUID.String(),
 		Message: fmt.Sprintf(
 			"1 час для окончания регистрации. Пожалуйста, перейдите по ссылке в telegram бот и нажмите /start для завершения регистрации: %s",
 			fmt.Sprintf("https://t.me/%s?start=%s", u.GetTelegramBot(), code.String()),

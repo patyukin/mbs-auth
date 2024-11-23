@@ -45,31 +45,6 @@ func ProfileModelFromSignUpRequest(userUUID uuid.UUID, in *authpb.SignUpRequest)
 	}, nil
 }
 
-func UsersWithProfilesResponseFromUserWithProfile(u []UserWithProfile) []*authpb.UserGUWP {
-	var users []*authpb.UserGUWP
-	for _, v := range u {
-		profile := &authpb.ProfileGUWP{
-			FirstName:   v.FirstName,
-			LastName:    v.LastName,
-			Patronymic:  v.Patronymic.String,
-			DateOfBirth: v.DateOfBirth.Format(time.DateOnly),
-			Email:       v.ProfileEmail,
-			Phone:       v.Phone,
-			Address:     v.Address,
-		}
-
-		user := &authpb.UserGUWP{
-			Id:      v.ID,
-			Email:   v.Email,
-			Profile: profile,
-		}
-
-		users = append(users, user)
-	}
-
-	return users
-}
-
 func UserModelFromSignUpRequest(in *authpb.SignUpRequest) User {
 	return User{
 		Email:        in.Email,

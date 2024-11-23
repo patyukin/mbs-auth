@@ -1,4 +1,13 @@
 -- +goose Up
+DROP TABLE IF EXISTS roles_permissions;
+DROP TABLE IF EXISTS permissions;
+DROP TABLE IF EXISTS users_roles;
+DROP TABLE IF EXISTS roles;
+DROP TABLE IF EXISTS profiles;
+DROP TABLE IF EXISTS tokens;
+DROP TABLE IF EXISTS telegram_users;
+DROP TABLE IF EXISTS users;
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE users

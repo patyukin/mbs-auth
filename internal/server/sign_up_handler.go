@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Server) SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error) {
-	response, err := s.uc.SignUp(ctx, in)
+	response, err := s.uc.SignUpV1UseCase(ctx, in)
 	if err != nil {
 		return nil, fmt.Errorf("failed s.uc.SignIn: %w", err)
 	}

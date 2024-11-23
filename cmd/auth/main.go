@@ -8,20 +8,18 @@ import (
 	"github.com/patyukin/mbs-auth/internal/config"
 	"github.com/patyukin/mbs-auth/internal/cronjob"
 	"github.com/patyukin/mbs-auth/internal/db"
-	"github.com/patyukin/mbs-auth/internal/metrics"
 	"github.com/patyukin/mbs-auth/internal/server"
 	"github.com/patyukin/mbs-auth/internal/usecase"
 	"github.com/patyukin/mbs-pkg/pkg/dbconn"
 	"github.com/patyukin/mbs-pkg/pkg/migrator"
+	"github.com/patyukin/mbs-pkg/pkg/mux"
 	desc "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 	"github.com/patyukin/mbs-pkg/pkg/rabbitmq"
 	"github.com/patyukin/mbs-pkg/pkg/tracing"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/reflection"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -43,20 +41,13 @@ func main() {
 		log.Fatal().Msgf("failed to load config, error: %v", err)
 	}
 
-	if err = metrics.Init(); err != nil {
-		log.Fatal().Msgf("failed to init metrics: %v", err)
-	}
-
-	_, closer, err := tracing.InitJaeger(fmt.Sprintf("jaeger:6831"), ServiceName)
+	_, closer, err := tracing.InitJaeger(fmt.Sprintf(cfg.TracerHost), ServiceName)
 	if err != nil {
 		log.Fatal().Msgf("failed to initialize tracer: %v", err)
 	}
 
 	defer closer()
 
-	log.Info().Msg("Jaeger connected")
-
-	log.Info().Msg("Opentracing connected")
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCServer.Port))
 	if err != nil {
 		log.Fatal().Msgf("failed to listen: %v", err)
@@ -112,7 +103,8 @@ func main() {
 	desc.RegisterAuthServiceServer(s, srv)
 	grpcPrometheus.Register(s)
 
-	log.Printf("server listening at %v", lis.Addr())
+	// http server
+	muxServer := mux.New()
 
 	errCh := make(chan error)
 
@@ -145,9 +137,7 @@ func main() {
 
 	// metrics + pprof server
 	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		log.Info().Msgf("Prometheus metrics exposed on :%d/metrics", cfg.HttpServer.Port)
-		if err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.HttpServer.Port), nil); err != nil {
+		if err = muxServer.Run(cfg.HttpServer.Port); err != nil {
 			log.Error().Msgf("Failed to serve Prometheus metrics: %v", err)
 			errCh <- err
 		}
@@ -169,8 +159,11 @@ func main() {
 
 	log.Info().Msg("Shutting Down")
 
-	// stop server
+	// stop servers
 	s.GracefulStop()
+	if err = muxServer.Shutdown(ctx); err != nil {
+		log.Error().Msgf("failed to shutdown http server: %v", err)
+	}
 
 	if err = dbConn.Close(); err != nil {
 		log.Error().Msgf("failed db connection close: %s", err.Error())

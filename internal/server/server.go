@@ -8,15 +8,13 @@ import (
 )
 
 type UseCase interface {
-	SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error)
-	SignIn(ctx context.Context, in *authpb.SignInRequest) (*authpb.SignInResponse, error)
-	SignInVerify(ctx context.Context, in *authpb.SignInVerifyRequest) (*authpb.SignInVerifyResponse, error)
-	GetUsersWithTokens(ctx context.Context, in *authpb.GetUsersWithTokensRequest) (*authpb.GetUsersWithTokensResponse, error)
-	GetUsersWithProfiles(ctx context.Context, in *authpb.GetUsersWithProfilesRequest) (*authpb.GetUsersWithProfilesResponse, error)
-	AddUserRole(ctx context.Context, in *authpb.AddUserRoleRequest) (*authpb.AddUserRoleResponse, error)
-	Authorize(ctx context.Context, in *authpb.AuthorizeRequest) (*authpb.AuthorizeResponse, error)
-	RefreshToken(ctx context.Context, in *authpb.RefreshTokenRequest) (*authpb.RefreshTokenResponse, error)
-	GetUserInfoUseCase(ctx context.Context, in *authpb.GetUserInfoRequest) (*authpb.GetUserInfoResponse, error)
+	SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error)
+	SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest) (*authpb.SignInResponse, error)
+	SignInVerifyV1UseCase(ctx context.Context, in *authpb.SignInConfirmationRequest) (*authpb.SignInConfirmationResponse, error)
+	GetUsersV1UseCase(ctx context.Context, in *authpb.GetUsersRequest) (*authpb.GetUsersResponse, error)
+	AddUserRoleV1UseCase(ctx context.Context, in *authpb.AddUserRoleRequest) (*authpb.AddUserRoleResponse, error)
+	AuthorizeUserV1UseCase(ctx context.Context, in *authpb.AuthorizeUserRequest) (*authpb.AuthorizeUserResponse, error)
+	RefreshTokenV1UseCase(ctx context.Context, in *authpb.RefreshTokenRequest) (*authpb.RefreshTokenResponse, error)
 }
 
 type Server struct {

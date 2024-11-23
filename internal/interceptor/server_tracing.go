@@ -3,6 +3,7 @@ package interceptor
 import (
 	"context"
 	"fmt"
+	"github.com/patyukin/mbs-pkg/pkg/tracing"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -17,9 +18,9 @@ func ServerTracingInterceptor(ctx context.Context, req interface{}, info *grpc.U
 
 	spanContext, ok := span.Context().(jaeger.SpanContext)
 	if ok {
-		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("x-trace-id", spanContext.TraceID().String()))
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(tracing.TraceID, spanContext.TraceID().String()))
 
-		header := metadata.New(map[string]string{"x-trace-id": spanContext.TraceID().String()})
+		header := metadata.New(map[string]string{tracing.TraceID: spanContext.TraceID().String()})
 		err := grpc.SendHeader(ctx, header)
 		if err != nil {
 			return nil, fmt.Errorf("send header: %w", err)

@@ -8,17 +8,6 @@ import (
 	"time"
 )
 
-func TgUserModelFromSignUpRequest(userUUID uuid.UUID) TelegramUser {
-	return TelegramUser{
-		UserUUID:       userUUID,
-		TelegramLogin:  sql.NullString{},
-		CreatedAt:      time.Now().UTC(),
-		UpdatedAt:      sql.NullTime{},
-		TelegramUserID: sql.NullInt64{},
-		TelegramChatID: sql.NullInt64{},
-	}
-}
-
 func ProfileModelFromSignUpRequest(userUUID uuid.UUID, in *authpb.SignUpRequest) (Profile, error) {
 	var Patronymic sql.NullString
 	if in.Patronymic != "" {
@@ -53,11 +42,24 @@ func UserModelFromSignUpRequest(in *authpb.SignUpRequest) User {
 	}
 }
 
-func SignUpRequestToUserModel(in *authpb.SignUpRequest) *User {
-	return &User{
-		UUID:         uuid.New(),
-		Email:        in.Email,
-		PasswordHash: in.Password,
-		CreatedAt:    time.Now().UTC(),
+func ToProtoUserInfo(users []UserWithProfile) []*authpb.UserInfo {
+	result := make([]*authpb.UserInfo, 0, len(users))
+	for _, u := range users {
+		result = append(
+			result, &authpb.UserInfo{
+				Id:    u.ID,
+				Email: u.Email,
+				Profile: &authpb.Profile{
+					FirstName:   u.FirstName,
+					LastName:    u.LastName,
+					Patronymic:  u.Patronymic.String,
+					DateOfBirth: u.DateOfBirth.Format("2006-01-02"),
+					Phone:       u.Phone,
+					Address:     u.Address,
+				},
+			},
+		)
 	}
+
+	return result
 }

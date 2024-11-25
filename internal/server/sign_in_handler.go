@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/opentracing/opentracing-go"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
@@ -21,9 +22,9 @@ func (s *Server) SignIn(ctx context.Context, in *authpb.SignInRequest) (*authpb.
 		}, nil
 	}
 
-	response, err := s.uc.SignIn(ctx, in)
+	response, err := s.uc.SignInV1UseCase(ctx, in)
 	if err != nil {
-		return &authpb.SignInResponse{Error: errs.ToErrorResponse(err)}, nil
+		return &authpb.SignInResponse{Error: errs.ToErrorResponse(fmt.Errorf("failed s.uc.SignIn: %w", err))}, nil
 	}
 
 	return response, nil

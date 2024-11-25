@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/patyukin/mbs-auth/internal/model"
+	"github.com/patyukin/mbs-pkg/pkg/errs"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 	"strings"
 	"time"
@@ -17,55 +18,57 @@ func (u *UseCase) SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest)
 	var user model.User
 	var profile model.Profile
 
-	err = u.registry.ReadCommitted(ctx, func(ctx context.Context, repo *db.Repository) error {
-		in.Password, err = u.HashPassword(in.Password)
-		if err != nil {
-			return fmt.Errorf("failed to hash password: %w", err)
-		}
+	err = u.registry.ReadCommitted(
+		ctx, func(ctx context.Context, repo *db.Repository) error {
+			in.Password, err = u.HashPassword(in.Password)
+			if err != nil {
+				return fmt.Errorf("failed to hash password: %w", err)
+			}
 
-		// find unique fields
-		exists, existsErr := repo.SelectUserWithExistsEmail(ctx, in.Email)
-		if existsErr != nil {
-			return fmt.Errorf("failed to check unique fields: %w", existsErr)
-		}
+			// find unique fields
+			exists, existsErr := repo.SelectUserWithExistsEmail(ctx, in.Email)
+			if existsErr != nil {
+				return fmt.Errorf("failed to check unique fields: %w", existsErr)
+			}
 
-		if exists {
-			return fmt.Errorf("user with email %s already exists", in.Email)
-		}
+			if exists {
+				return fmt.Errorf("user with email %s already exists, %w", in.Email, errs.ErrUserNotFound)
+			}
 
-		user = model.UserModelFromSignUpRequest(in)
-		userUUID, err = repo.InsertIntoUsers(ctx, user)
-		if err != nil {
-			return fmt.Errorf("failed repo.InsertIntoUsers: %w", err)
-		}
+			user = model.UserModelFromSignUpRequest(in)
+			userUUID, err = repo.InsertIntoUsers(ctx, user)
+			if err != nil {
+				return fmt.Errorf("failed repo.InsertIntoUsers: %w", err)
+			}
 
-		profile, err = model.ProfileModelFromSignUpRequest(userUUID, in)
-		if err != nil {
-			return fmt.Errorf("failed model.ProfileModelFromSignUpRequest: %w", err)
-		}
+			profile, err = model.ProfileModelFromSignUpRequest(userUUID, in)
+			if err != nil {
+				return fmt.Errorf("failed model.ProfileModelFromSignUpRequest: %w", err)
+			}
 
-		_, err = repo.InsertIntoProfiles(ctx, profile)
-		if err != nil {
-			return fmt.Errorf("failed repo.InsertIntoProfiles: %w", err)
-		}
+			_, err = repo.InsertIntoProfiles(ctx, profile)
+			if err != nil {
+				return fmt.Errorf("failed repo.InsertIntoProfiles: %w", err)
+			}
 
-		_, err = repo.InsertIntoTelegramUsers(ctx, userUUID, in.TelegramLogin)
-		if err != nil {
-			return fmt.Errorf("failed repo.InsertIntoTelegramUsers: %w", err)
-		}
+			_, err = repo.InsertIntoTelegramUsers(ctx, userUUID, in.TelegramLogin)
+			if err != nil {
+				return fmt.Errorf("failed repo.InsertIntoTelegramUsers: %w", err)
+			}
 
-		code, err = uuid.NewV7FromReader(strings.NewReader(fmt.Sprintf("%s_%d", userUUID.String(), time.Now().UnixNano())))
-		if err != nil {
-			return fmt.Errorf("failed uuid.NewV7FromReader: %w", err)
-		}
+			code, err = uuid.NewV7FromReader(strings.NewReader(fmt.Sprintf("%s_%d", userUUID.String(), time.Now().UnixNano())))
+			if err != nil {
+				return fmt.Errorf("failed uuid.NewV7FromReader: %w", err)
+			}
 
-		err = u.chr.SetSignUpCode(ctx, in.TelegramLogin, code, userUUID, time.Hour)
-		if err != nil {
-			return fmt.Errorf("failed u.chr.SetSignUpCode: %w", err)
-		}
+			err = u.chr.SetSignUpCode(ctx, in.TelegramLogin, code, userUUID, time.Hour)
+			if err != nil {
+				return fmt.Errorf("failed u.chr.SetSignUpCode: %w", err)
+			}
 
-		return nil
-	})
+			return nil
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed u.registry.ReadCommitted: %w", err)
 	}

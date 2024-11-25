@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (u *UseCase) GetUserInfoUseCase(ctx context.Context, in *authpb.GetUserInfoRequest) (*authpb.GetUserInfoResponse, error) {
+func (u *UseCase) GetUserInfoUseCase(ctx context.Context, in *authpb.GetUserByIDRequest) (*authpb.GetUserByIDResponse, error) {
 	userInfo, err := u.registry.GetRepo().SelectUserInfoByID(ctx, in.GetUserId())
 	if err != nil {
 		return nil, fmt.Errorf("failed u.registry.GetRepo().SelectUserInfoByID: %w", err)
@@ -20,5 +20,5 @@ func (u *UseCase) GetUserInfoUseCase(ctx context.Context, in *authpb.GetUserInfo
 		return nil, fmt.Errorf("failed u.registry.GetRepo().SelectUserInfoByID: %w", errs.ErrUserNotFound)
 	}
 
-	return &authpb.GetUserInfoResponse{User: userInfo}, nil
+	return &authpb.GetUserByIDResponse{User: userInfo}, nil
 }

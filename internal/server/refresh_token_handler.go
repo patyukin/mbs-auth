@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Server) RefreshToken(ctx context.Context, in *authpb.RefreshTokenRequest) (*authpb.RefreshTokenResponse, error) {
-	response, err := s.uc.RefreshToken(ctx, in)
+	response, err := s.uc.RefreshTokenV1UseCase(ctx, in)
 	if err != nil {
 		log.Error().Msgf("failed uc.RefreshToken: %v", err)
 		return nil, fmt.Errorf("failed RefreshToken")

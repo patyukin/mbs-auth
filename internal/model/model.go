@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+type UserInfo struct {
+	UUID    uuid.UUID `json:"id"`
+	Email   string    `json:"email"`
+	Profile Profile   `json:"profile"`
+}
+
 type User struct {
 	UUID         uuid.UUID    `json:"id"`
 	Email        string       `json:"email"`

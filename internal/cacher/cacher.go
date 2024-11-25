@@ -34,7 +34,7 @@ func (r *Cacher) GetVerificationCode(ctx context.Context, telegramUserID int) (s
 }
 
 func (r *Cacher) SetSignUpCode(ctx context.Context, tgUserName string, code, userUUID uuid.UUID, expiration time.Duration) error {
-	return r.client.Set(ctx, "user:"+tgUserName, fmt.Sprintf("%s:%s", code.String(), userUUID), expiration).Err()
+	return r.client.Set(ctx, "user:"+tgUserName, fmt.Sprintf("%s:%s", code.String(), userUUID.String()), expiration).Err()
 }
 
 func (r *Cacher) GetSignUpCode(ctx context.Context, tgUserName string) (string, error) {

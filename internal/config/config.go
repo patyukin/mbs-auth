@@ -17,9 +17,14 @@ type Config struct {
 		Timeout           int `yaml:"timeout"`
 		MaxConnectionAge  int `yaml:"max_connection_age"`
 	} `yaml:"grpc_server" validate:"required"`
-	PostgreSQLDSN   string `yaml:"postgresql_dsn" validate:"required"`
-	RedisDSN        string `yaml:"redis_dsn" validate:"required"`
-	RabbitMQUrl     string `yaml:"rabbitmq_url" validate:"required"`
+	PostgreSQLDSN string `yaml:"postgresql_dsn" validate:"required"`
+	RedisDSN      string `yaml:"redis_dsn" validate:"required"`
+	RabbitMQUrl   string `yaml:"rabbitmq_url" validate:"required"`
+	Kafka         struct {
+		Brokers       []string `yaml:"brokers" validate:"required"`
+		ConsumerGroup string   `yaml:"consumer_group" validate:"required"`
+		Topics        []string `yaml:"topics" validate:"required"`
+	} `yaml:"kafka" validate:"required"`
 	TelegramBotName string `yaml:"telegram_bot_name" validate:"required"`
 	TracerHost      string `yaml:"tracer_host" validate:"required"`
 }

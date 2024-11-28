@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
@@ -29,85 +28,6 @@ func (r *Repository) InsertIntoUsers(ctx context.Context, in model.User) (uuid.U
 	}
 
 	return id, nil
-}
-
-func (r *Repository) SelectUsersWithTokensCount(ctx context.Context) (int32, error) {
-	query := `SELECT COUNT(*) FROM users u INNER JOIN tokens t ON u.id = t.user_id`
-	row := r.db.QueryRowContext(ctx, query)
-	if row.Err() != nil {
-		return 0, fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
-	}
-
-	var count int32
-	err := row.Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed row.Scan: %w", err)
-	}
-
-	return count, nil
-}
-
-func (r *Repository) SelectUsersWithTokens(ctx context.Context, limit int32, page int32) ([]*authpb.UserGUWR, error) {
-	query := `
-SELECT
-    u.id,
-    u.email,
-    json_agg(
-        json_build_object(
-            'token', t.token,
-            'expires_at', t.expires_at
-        )
-    ) AS tokens
-FROM (
-    SELECT
-        u_inner.id,
-        u_inner.email,
-        ROW_NUMBER() OVER (ORDER BY u_inner.created_at ASC) as rn
-    FROM users u_inner
-    INNER JOIN tokens t_inner ON u_inner.id = t_inner.user_id
-) u
-INNER JOIN tokens t ON u.id = t.user_id
-WHERE u.rn > ($1 - 1) * $2 AND u.rn <= $1 * $2
-GROUP BY u.id, u.email, u.rn
-ORDER BY u.rn ASC
-`
-	rows, err := r.db.QueryContext(ctx, query, limit, page)
-	if err != nil {
-		return nil, fmt.Errorf("failed r.db.QueryContext: %w", err)
-	}
-
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			log.Error().Msgf("failed rows.Close: %v", err)
-		}
-	}(rows)
-
-	var users []*authpb.UserGUWR
-	for rows.Next() {
-		var id, email string
-		var tokensJSON []byte
-
-		if err = rows.Scan(&id, &email, &tokensJSON); err != nil {
-			return nil, fmt.Errorf("rows.Scan tokensJSON: %w", err)
-		}
-
-		var tokens []*authpb.TokenGUWR
-
-		if err = json.Unmarshal(tokensJSON, &tokens); err != nil {
-			return nil, fmt.Errorf("json.Unmarshal tokens: %w", err)
-		}
-
-		user := &authpb.UserGUWR{
-			Id:     id,
-			Email:  email,
-			Tokens: tokens,
-		}
-
-		users = append(users, user)
-	}
-
-	return users, nil
 }
 
 func (r *Repository) SelectUsersWithProfilesCount(ctx context.Context) (int32, error) {
@@ -314,10 +234,6 @@ SELECT
 		p.date_of_birth,
 		p.phone,
 		p.address,
-		tu.telegram_login,
-		tu.telegram_id,
-		tu.chat_id,
-		TO_CHAR(u.created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at
 FROM users AS u
 INNER JOIN telegram_users AS tu ON u.id = tu.user_id
 INNER JOIN profiles AS p ON u.id = p.user_id
@@ -329,22 +245,35 @@ WHERE u.id = $1`
 
 	var user authpb.UserInfo
 	err := row.Scan(
-		&user.UserId,
+		&user.Id,
 		&user.Email,
-		&user.FirstName,
-		&user.LastName,
-		&user.Patronymic,
-		&user.DateOfBirth,
-		&user.Phone,
-		&user.Address,
-		&user.TelegramLogin,
-		&user.TelegramId,
-		&user.ChatId,
-		&user.CreatedAt,
+		&user.Profile.FirstName,
+		&user.Profile.LastName,
+		&user.Profile.Patronymic,
+		&user.Profile.DateOfBirth,
+		&user.Profile.Phone,
+		&user.Profile.Address,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed row.Scan: %w", err)
 	}
 
 	return &user, nil
+}
+
+func (r *Repository) AddUserToRole(ctx context.Context, userID, role string) (string, error) {
+	query := `INSERT INTO users_roles (user_id, role_id) 
+VALUES ($1, (SELECT id FROM roles WHERE name = $2)) RETURNING id`
+	row := r.db.QueryRowContext(ctx, query, userID, role)
+	if row.Err() != nil {
+		return "", fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
+	}
+
+	var id string
+	err := row.Scan(&id)
+	if err != nil {
+		return "", fmt.Errorf("failed row.Scan: %w", err)
+	}
+
+	return id, nil
 }

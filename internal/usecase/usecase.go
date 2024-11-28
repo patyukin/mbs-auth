@@ -14,9 +14,7 @@ import (
 )
 
 type Producer interface {
-	PublishDQLMessage(ctx context.Context, body []byte) error
-	PublishAuthSignUpResultMessage(ctx context.Context, body []byte, headers amqp.Table) error
-	PublishAuthSignInCode(ctx context.Context, body []byte, headers amqp.Table) error
+	EnqueueTelegramMessage(ctx context.Context, body []byte, headers amqp.Table) error
 }
 
 type Cacher interface {

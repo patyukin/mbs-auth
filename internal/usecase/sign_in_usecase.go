@@ -76,7 +76,7 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 				return fmt.Errorf("failed to marshal payload: %w", err)
 			}
 
-			err = u.prdcr.PublishAuthSignInCode(ctx, msg, amqp.Table{})
+			err = u.prdcr.EnqueueTelegramMessage(ctx, msg, amqp.Table{})
 			if err != nil {
 				return fmt.Errorf("failed u.prdcr.SendMessage: %w", err)
 			}

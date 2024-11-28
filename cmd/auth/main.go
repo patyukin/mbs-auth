@@ -11,8 +11,9 @@ import (
 	"github.com/patyukin/mbs-auth/internal/server"
 	"github.com/patyukin/mbs-auth/internal/usecase"
 	"github.com/patyukin/mbs-pkg/pkg/dbconn"
+	"github.com/patyukin/mbs-pkg/pkg/kafka"
 	"github.com/patyukin/mbs-pkg/pkg/migrator"
-	"github.com/patyukin/mbs-pkg/pkg/mux"
+	"github.com/patyukin/mbs-pkg/pkg/mux_server"
 	desc "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 	"github.com/patyukin/mbs-pkg/pkg/rabbitmq"
 	"github.com/patyukin/mbs-pkg/pkg/tracing"
@@ -69,23 +70,16 @@ func main() {
 
 	err = rbt.BindQueueToExchange(
 		rabbitmq.Exchange,
-		rabbitmq.NotifyAuthQueue,
-		[]string{rabbitmq.NotifySignUpConfirmCodeRouteKey},
+		rabbitmq.TelegramMessageQueue,
+		[]string{rabbitmq.TelegramMessageRouteKey},
 	)
 	if err != nil {
 		log.Fatal().Msgf("failed to bind NotifyAuthQueue to exchange with - NotifySignUpConfirmCodeRouteKey: %v", err)
 	}
 
-	err = rbt.BindQueueToExchange(
-		rabbitmq.Exchange,
-		rabbitmq.AuthNotifyQueue,
-		[]string{rabbitmq.AuthSignInConfirmCodeRouteKey, rabbitmq.AuthSignUpResultMessageRouteKey},
-	)
+	kfk, err := kafka.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.ConsumerGroup, cfg.Kafka.Topics)
 	if err != nil {
-		log.Fatal().Msgf(
-			"failed to bind AuthNotifyQueue to exchange with - AuthSignInConfirmCodeRouteKey, "+
-				"AuthSignUpResultMessageRouteKey: %v", err,
-		)
+		log.Fatal().Msgf("failed to create kafka consumer, err: %v", err)
 	}
 
 	chr, err := cacher.New(ctx, cfg.RedisDSN)
@@ -104,13 +98,13 @@ func main() {
 	grpcPrometheus.Register(s)
 
 	// http server
-	muxServer := mux.New()
+	muxServer := mux_server.New()
 
 	errCh := make(chan error)
 
 	// cron job
 	cj := cronjob.New(uc)
-	uc.RemoveNotRegisteredUsers(ctx)
+	uc.RemoveNotRegisteredUsers(ctx) // temp
 	go func() {
 		if err = cj.Run(ctx); err != nil {
 			log.Error().Msgf("failed adding cron job, err: %v", err)
@@ -120,8 +114,8 @@ func main() {
 
 	// run consumer
 	go func() {
-		if err = rbt.Consume(ctx, rabbitmq.NotifyAuthQueue, uc.NotifyConsumeHandler); err != nil {
-			log.Error().Msgf("failed to consume from queue: %v", err)
+		if err = kfk.ProcessMessages(ctx, uc.RegistrationSolutionProcess); err != nil {
+			log.Error().Msgf("failed to process messages: %v", err)
 			errCh <- err
 		}
 	}()

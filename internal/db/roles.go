@@ -18,7 +18,7 @@ func (r *Repository) InsertIntoUsersRoles(ctx context.Context, userID, roleID st
 	return nil
 }
 
-func (r *Repository) SelectExistsRowByRoleUserIDAndRoutePath(ctx context.Context, in *authpb.AuthorizeRequest) (bool, error) {
+func (r *Repository) SelectExistsRowByRoleUserIDAndRoutePath(ctx context.Context, in *authpb.AuthorizeUserRequest) (bool, error) {
 	query := `
 SELECT
 	ur.id

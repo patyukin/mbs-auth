@@ -8,6 +8,7 @@ import (
 	"github.com/patyukin/mbs-auth/internal/config"
 	"github.com/patyukin/mbs-auth/internal/cronjob"
 	"github.com/patyukin/mbs-auth/internal/db"
+	"github.com/patyukin/mbs-auth/internal/metrics"
 	"github.com/patyukin/mbs-auth/internal/server"
 	"github.com/patyukin/mbs-auth/internal/usecase"
 	"github.com/patyukin/mbs-pkg/pkg/dbconn"
@@ -40,6 +41,10 @@ func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal().Msgf("failed to load config, error: %v", err)
+	}
+
+	if err = metrics.Init(); err != nil {
+		log.Fatal().Msgf("failed to init metrics: %v", err)
 	}
 
 	_, closer, err := tracing.InitJaeger(fmt.Sprintf(cfg.TracerHost), ServiceName)

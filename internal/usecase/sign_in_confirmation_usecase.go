@@ -35,9 +35,9 @@ func (u *UseCase) SignInConfirmationV1UseCase(ctx context.Context, in *authpb.Si
 				return fmt.Errorf("failed u.generateJWT: %w", err)
 			}
 
-			refreshToken, err = repo.InsertToken(ctx, user.UUID)
+			refreshToken, err = repo.UpsertToken(ctx, user.UUID)
 			if err != nil {
-				return fmt.Errorf("failed repo.InsertToken: %w", err)
+				return fmt.Errorf("failed repo.UpsertToken: %w", err)
 			}
 
 			return nil

@@ -7,10 +7,19 @@ import (
 	"time"
 )
 
-func (r *Repository) InsertToken(ctx context.Context, userUUID uuid.UUID) (string, error) {
+func (r *Repository) UpsertToken(ctx context.Context, userUUID uuid.UUID) (string, error) {
 	currentTime := time.Now().UTC()
 	expiresAt := currentTime.Add(24 * 30 * time.Hour)
-	query := `INSERT INTO tokens (user_id, expires_at, created_at) VALUES ($1, $2, $3) RETURNING token`
+	query := `
+INSERT INTO tokens (user_id, expires_at, created_at, token)
+VALUES ($1, $2, $3, DEFAULT)
+ON CONFLICT (user_id) 
+DO UPDATE SET
+    expires_at = EXCLUDED.expires_at,
+    created_at = EXCLUDED.created_at,
+    token = DEFAULT
+RETURNING token
+`
 	row := r.db.QueryRowContext(ctx, query, userUUID.String(), expiresAt, currentTime)
 	if row.Err() != nil {
 		return "", fmt.Errorf("failed to insert token: %w", row.Err())

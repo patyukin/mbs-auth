@@ -9,7 +9,6 @@ import (
 	rabbitmqModel "github.com/patyukin/mbs-pkg/pkg/model"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"time"
 )
 
 func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest) (*authpb.SignInResponse, error) {
@@ -50,9 +49,7 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 				}
 			}
 
-			expiratedTime := 24 * time.Hour
-
-			err = u.chr.Set2FACode(ctx, code, user.UUID.String(), expiratedTime)
+			err = u.chr.Set2FACode(ctx, code, user.UUID.String())
 			if err != nil {
 				return fmt.Errorf("failed to set 2fa code: %w", err)
 			}
@@ -66,9 +63,9 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 				return fmt.Errorf("telegram chat id not found")
 			}
 
-			payload := rabbitmqModel.AuthSignInCode{
-				Code:   code,
-				ChatID: telegramUser.TelegramChatID.Int64,
+			payload := rabbitmqModel.SimpleTelegramMessage{
+				Message: fmt.Sprintf("code: %s, valid 24 hours", code),
+				ChatID:  telegramUser.TelegramChatID.Int64,
 			}
 
 			msg, err = json.Marshal(payload)

@@ -49,8 +49,8 @@ func (r *Cacher) Exists2FACode(ctx context.Context, code string) (int64, error) 
 	return r.client.Exists(ctx, code).Result()
 }
 
-func (r *Cacher) Set2FACode(ctx context.Context, code, userID string, expiration time.Duration) error {
-	return r.client.Set(ctx, code, userID, expiration).Err()
+func (r *Cacher) Set2FACode(ctx context.Context, code, userID string) error {
+	return r.client.Set(ctx, code, userID, 24*time.Hour).Err()
 }
 
 func (r *Cacher) Get2FACode(ctx context.Context, code string) (string, error) {

@@ -33,9 +33,9 @@ CREATE TABLE telegram_users
 CREATE TABLE tokens
 (
     token      UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id    UUID      NOT NULL REFERENCES users (id),
-    expires_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP NOT NULL
+    user_id    UUID UNIQUE NOT NULL REFERENCES users (id),
+    expires_at TIMESTAMP   NOT NULL,
+    created_at TIMESTAMP   NOT NULL
 );
 
 CREATE TABLE profiles

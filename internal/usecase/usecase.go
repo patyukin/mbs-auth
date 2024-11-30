@@ -22,7 +22,7 @@ type Cacher interface {
 	GetSignUpCode(ctx context.Context, tgUserName string) (string, error)
 	DeleteSignUpCode(ctx context.Context, tgUserName string) error
 	Exists2FACode(ctx context.Context, code string) (int64, error)
-	Set2FACode(ctx context.Context, code, userID string, expiration time.Duration) error
+	Set2FACode(ctx context.Context, code, userID string) error
 	Get2FACode(ctx context.Context, code string) (string, error)
 	Delete2FACode(ctx context.Context, code string) error
 }

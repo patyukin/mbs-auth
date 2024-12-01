@@ -16,5 +16,5 @@ func (u *UseCase) GetUserByIDUseCase(ctx context.Context, in *authpb.GetUserByID
 
 	pbm := model.ToProtoUserInfoDB(userInfo)
 
-	return &authpb.GetUserByIDResponse{User: pbm}, nil
+	return &authpb.GetUserByIDResponse{User: &pbm}, nil
 }

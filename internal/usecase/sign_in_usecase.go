@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/patyukin/mbs-auth/internal/db"
@@ -37,7 +38,7 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 			}
 
 			if !telegramUser.TelegramChatID.Valid {
-				return fmt.Errorf("telegram chat id not found")
+				return errors.New("telegram chat id not found")
 			}
 
 			// Генерация уникального кода 2FA

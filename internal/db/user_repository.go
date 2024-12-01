@@ -144,7 +144,7 @@ func (r *Repository) SelectUserByUUID(ctx context.Context, userUUID string) (mod
 
 func (r *Repository) SelectNotRegisteredUsers(ctx context.Context) ([]uuid.UUID, error) {
 	// TODO uncomment it
-	t := time.Now().UTC() // .Add(-2 * time.Hour)
+	currentTime := time.Now().UTC() // .Add(-2 * time.Hour)
 	query := `
 SELECT 
   u.id 
@@ -154,7 +154,7 @@ WHERE tu.chat_id IS NULL
   AND tu.created_at < $1
 `
 
-	rows, err := r.db.QueryContext(ctx, query, t)
+	rows, err := r.db.QueryContext(ctx, query, currentTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select users in r.db.QueryContext: %w", err)
 	}

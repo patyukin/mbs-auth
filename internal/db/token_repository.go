@@ -45,7 +45,7 @@ func (r *Repository) CleanExpiredTokens(ctx context.Context) error {
 	return nil
 }
 
-func (r *Repository) SelectByID(ctx context.Context, ID string) (string, string, error) {
+func (r *Repository) SelectByID(ctx context.Context, token string) (string, string, error) {
 	timeNow := time.Now().UTC()
 	query := `
 SELECT
@@ -55,7 +55,7 @@ FROM tokens AS t
 INNER JOIN users_roles AS ur ON t.user_id = ur.user_id
 INNER JOIN roles AS r ON ur.role_id = r.id
 WHERE token = $1 AND expires_at > $2`
-	row := r.db.QueryRowContext(ctx, query, ID, timeNow)
+	row := r.db.QueryRowContext(ctx, query, token, timeNow)
 	if row.Err() != nil {
 		return "", "", fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
 	}

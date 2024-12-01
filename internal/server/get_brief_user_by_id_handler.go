@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Server) GetBriefUserByID(ctx context.Context, in *authpb.GetBriefUserByIDRequest) (*authpb.GetBriefUserByIDResponse, error) {
-	response, err := s.uc.GetBriefUserById(ctx, in)
+	response, err := s.uc.GetBriefUserByID(ctx, in)
 	if err != nil {
 		return nil, fmt.Errorf("failed uc.GetBriefUserByIDUseCase: %w", err)
 	}

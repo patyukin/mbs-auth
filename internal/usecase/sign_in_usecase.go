@@ -16,6 +16,7 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 	var user model.User
 	var telegramUser model.TelegramUser
 	var msg []byte
+	var code string
 
 	err = u.registry.ReadCommitted(
 		ctx, func(ctx context.Context, repo *db.Repository) error {
@@ -29,31 +30,6 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 				return fmt.Errorf("failed to compare passwords: %w", err)
 			}
 
-			// Генерация уникального кода 2FA
-			var code string
-			var exists int64
-			for {
-				code, err = u.GenerateSignInCode()
-				if err != nil {
-					return fmt.Errorf("failed to generate sign in code: %w", err)
-				}
-
-				// Проверка на уникальность кода
-				exists, err = u.chr.Exists2FACode(ctx, code)
-				if err != nil {
-					return fmt.Errorf("failed to check sign in code: %w", err)
-				}
-
-				if exists == 0 {
-					break
-				}
-			}
-
-			err = u.chr.Set2FACode(ctx, code, user.UUID.String())
-			if err != nil {
-				return fmt.Errorf("failed to set 2fa code: %w", err)
-			}
-
 			telegramUser, err = repo.SelectFromTelegramUsersByUser(ctx, user.UUID)
 			if err != nil {
 				return fmt.Errorf("failed repo.SelectFromTelegramUsersByUser: %w", err)
@@ -61,6 +37,12 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 
 			if !telegramUser.TelegramChatID.Valid {
 				return fmt.Errorf("telegram chat id not found")
+			}
+
+			// Генерация уникального кода 2FA
+			err = u.chr.Set2FACode(ctx, user.UUID.String(), code)
+			if err != nil {
+				return fmt.Errorf("failed to set 2fa code: %w", err)
 			}
 
 			payload := rabbitmqModel.SimpleTelegramMessage{

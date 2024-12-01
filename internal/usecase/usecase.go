@@ -21,10 +21,9 @@ type Cacher interface {
 	SetSignUpCode(ctx context.Context, tgUserName string, code, userUUID uuid.UUID, expiration time.Duration) error
 	GetSignUpCode(ctx context.Context, tgUserName string) (string, error)
 	DeleteSignUpCode(ctx context.Context, tgUserName string) error
-	Exists2FACode(ctx context.Context, code string) (int64, error)
-	Set2FACode(ctx context.Context, code, userID string) error
-	Get2FACode(ctx context.Context, code string) (string, error)
-	Delete2FACode(ctx context.Context, code string) error
+	Set2FACode(ctx context.Context, userID, code string) error
+	Get2FACode(ctx context.Context, userID string) (string, error)
+	Delete2FACode(ctx context.Context, userID string) error
 }
 
 type UseCase struct {

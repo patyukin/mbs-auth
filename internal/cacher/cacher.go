@@ -45,20 +45,16 @@ func (r *Cacher) DeleteSignUpCode(ctx context.Context, tgUserName string) error 
 	return r.client.Del(ctx, "user:"+tgUserName).Err()
 }
 
-func (r *Cacher) Exists2FACode(ctx context.Context, code string) (int64, error) {
-	return r.client.Exists(ctx, code).Result()
+func (r *Cacher) Set2FACode(ctx context.Context, userID, code string) error {
+	return r.client.Set(ctx, fmt.Sprintf("otp2fa:%s", userID), code, 24*time.Hour).Err()
 }
 
-func (r *Cacher) Set2FACode(ctx context.Context, code, userID string) error {
-	return r.client.Set(ctx, code, userID, 24*time.Hour).Err()
+func (r *Cacher) Get2FACode(ctx context.Context, userID string) (string, error) {
+	return r.client.Get(ctx, fmt.Sprintf("otp2fa:%s", userID)).Result()
 }
 
-func (r *Cacher) Get2FACode(ctx context.Context, code string) (string, error) {
-	return r.client.Get(ctx, code).Result()
-}
-
-func (r *Cacher) Delete2FACode(ctx context.Context, code string) error {
-	return r.client.Del(ctx, code).Err()
+func (r *Cacher) Delete2FACode(ctx context.Context, userID string) error {
+	return r.client.Del(ctx, fmt.Sprintf("otp2fa:%s", userID)).Err()
 }
 
 func (r *Cacher) SetTempCode(ctx context.Context, userID string, code string, expiration time.Duration) error {

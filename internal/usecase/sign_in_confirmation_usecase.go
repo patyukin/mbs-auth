@@ -31,7 +31,7 @@ func (u *UseCase) SignInConfirmationV1UseCase(ctx context.Context, in *authpb.Si
 		}
 
 		if code != in.GetCode() {
-			return fmt.Errorf("invalid code")
+			return fmt.Errorf("codes are not equal: %s != %s", code, in.GetCode())
 		}
 
 		role, err = repo.SelectRoleByUserID(ctx, user.UUID.String())

@@ -74,5 +74,5 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 		return nil, fmt.Errorf("failed to read committed: %w", err)
 	}
 
-	return nil, nil
+	return &authpb.SignInResponse{}, nil
 }

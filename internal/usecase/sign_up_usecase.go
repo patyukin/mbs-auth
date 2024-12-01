@@ -37,7 +37,7 @@ func (u *UseCase) SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest)
 			}
 
 			user = model.UserModelFromSignUpRequest(in)
-			userUUID, err = repo.InsertIntoUsers(ctx, user)
+			userUUID, err = repo.InsertIntoUsers(ctx, &user)
 			if err != nil {
 				return fmt.Errorf("failed repo.InsertIntoUsers: %w", err)
 			}

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"strings"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/patyukin/mbs-pkg/pkg/errs"
 )
 
-func (r *Repository) InsertIntoUsers(ctx context.Context, in model.User) (uuid.UUID, error) {
+func (r *Repository) InsertIntoUsers(ctx context.Context, in *model.User) (uuid.UUID, error) {
 	query := `INSERT INTO users (email, password_hash, created_at) VALUES ($1, $2, $3) RETURNING id`
 	row := r.db.QueryRowContext(ctx, query, in.Email, in.PasswordHash, in.CreatedAt)
 	if row.Err() != nil {
@@ -73,7 +74,11 @@ OFFSET $1 LIMIT $2;
 		return nil, fmt.Errorf("failed rows.Err(): %w", err)
 	}
 
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		if err = rows.Close(); err != nil {
+			log.Error().Msgf("failed close rows: %v", err)
+		}
+	}(rows)
 
 	var uwps []model.UserWithProfile
 
@@ -152,7 +157,12 @@ WHERE tu.chat_id IS NULL
 	if err != nil {
 		return nil, fmt.Errorf("failed to select users in r.db.QueryContext: %w", err)
 	}
-	defer rows.Close()
+
+	defer func(rows *sql.Rows) {
+		if err = rows.Close(); err != nil {
+			log.Error().Msgf("failed rows.Close: %v", err)
+		}
+	}(rows)
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed during row iteration in rows.Err(): %w", err)

@@ -64,8 +64,8 @@ func ToProtoUserInfo(users []UserWithProfile) []*authpb.UserInfo {
 	return result
 }
 
-func ToProtoUserInfoDB(userInfoDB UserInfoDB) *authpb.UserInfo {
-	return &authpb.UserInfo{
+func ToProtoUserInfoDB(userInfoDB UserInfoDB) authpb.UserInfo {
+	return authpb.UserInfo{
 		Id:    userInfoDB.ID,
 		Email: userInfoDB.Email,
 		Profile: &authpb.Profile{

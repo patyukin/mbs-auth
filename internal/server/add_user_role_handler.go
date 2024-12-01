@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
@@ -15,7 +16,7 @@ func (s *Server) AddUserRole(ctx context.Context, in *authpb.AddUserRoleRequest)
 	if spanContext == nil {
 		return &authpb.AddUserRoleResponse{
 			Error: &error_v1.ErrorResponse{
-				Code:        500,
+				Code:        http.StatusInternalServerError,
 				Message:     "Internal Server Error",
 				Description: "no span found in context",
 			},

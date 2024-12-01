@@ -48,7 +48,7 @@ func main() {
 		log.Fatal().Msgf("failed to init metrics: %v", err)
 	}
 
-	_, closer, err := tracing.InitJaeger(fmt.Sprintf(cfg.TracerHost), ServiceName)
+	_, closer, err := tracing.InitJaeger(cfg.TracerHost, ServiceName)
 	if err != nil {
 		log.Fatal().Msgf("failed to initialize tracer: %v", err)
 	}
@@ -110,7 +110,6 @@ func main() {
 
 	// cron job
 	cj := cronjob.New(uc)
-	uc.RemoveNotRegisteredUsers(ctx) // temp
 	go func() {
 		if err = cj.Run(ctx); err != nil {
 			log.Error().Msgf("failed adding cron job, err: %v", err)

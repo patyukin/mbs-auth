@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
@@ -16,7 +17,7 @@ func (s *Server) SignIn(ctx context.Context, in *authpb.SignInRequest) (*authpb.
 		msg := "no span found in context"
 		return &authpb.SignInResponse{
 			Error: &error_v1.ErrorResponse{
-				Code:        500,
+				Code:        http.StatusInternalServerError,
 				Message:     msg,
 				Description: msg,
 			},

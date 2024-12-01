@@ -99,7 +99,7 @@ func (r *Cacher) Delete2FACode(ctx context.Context, userID string) error {
 }
 
 func (r *Cacher) SetTempCode(ctx context.Context, userID, code string, expiration time.Duration) error {
-	err := r.client.Set(ctx, "tempcode:"+userID, code, expiration).Err()
+	err := r.client.Set(ctx, fmt.Sprintf("tempcode:%s", userID), code, expiration).Err()
 	if err != nil {
 		return fmt.Errorf("failed to set temp code: %w", err)
 	}
@@ -108,7 +108,7 @@ func (r *Cacher) SetTempCode(ctx context.Context, userID, code string, expiratio
 }
 
 func (r *Cacher) GetTempCode(ctx context.Context, userID string) (string, error) {
-	code, err := r.client.Get(ctx, "tempcode:"+userID).Result()
+	code, err := r.client.Get(ctx, fmt.Sprintf("tempcode:%s", userID)).Result()
 	if err != nil {
 		return "", fmt.Errorf("failed to get temp code: %w", err)
 	}
@@ -117,7 +117,7 @@ func (r *Cacher) GetTempCode(ctx context.Context, userID string) (string, error)
 }
 
 func (r *Cacher) DeleteTempCode(ctx context.Context, userID string) error {
-	err := r.client.Del(ctx, "tempcode:"+userID).Err()
+	err := r.client.Del(ctx, fmt.Sprintf("tempcode:%s", userID)).Err()
 	if err != nil {
 		return fmt.Errorf("failed to delete temp code: %w", err)
 	}

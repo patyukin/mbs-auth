@@ -14,6 +14,8 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const maxBytes = 30
+
 type Producer interface {
 	EnqueueTelegramMessage(ctx context.Context, body []byte, headers amqp.Table) error
 }
@@ -54,7 +56,7 @@ func (u *UseCase) GetTelegramBot() string {
 }
 
 func (u *UseCase) GenerateSignInCode() (string, error) {
-	bytes := make([]byte, 30)
+	bytes := make([]byte, maxBytes)
 	_, err := rand.Read(bytes)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate random bytes: %w", err)

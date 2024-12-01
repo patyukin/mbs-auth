@@ -18,7 +18,7 @@ func (s *Server) RefreshToken(ctx context.Context, in *authpb.RefreshTokenReques
 			Error: &error_v1.ErrorResponse{
 				Code:        http.StatusInternalServerError,
 				Message:     "failed RefreshToken",
-				Description: fmt.Sprintf("failed uc.RefreshToken: %v", err),
+				Description: fmt.Sprintf("failed uc.RefreshToken: %v", err.Error()),
 			},
 		}, nil
 	}

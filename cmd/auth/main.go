@@ -98,10 +98,10 @@ func main() {
 	srv := server.New(uc)
 
 	// grpc server
-	s := server.NewGRPCServer(cfg)
-	reflection.Register(s)
-	desc.RegisterAuthServiceServer(s, srv)
-	grpcPrometheus.Register(s)
+	grpcServer := server.NewGRPCServer(cfg)
+	reflection.Register(grpcServer)
+	desc.RegisterAuthServiceServer(grpcServer, srv)
+	grpcPrometheus.Register(grpcServer)
 
 	// http server
 	muxServer := mux_server.New()
@@ -128,7 +128,7 @@ func main() {
 	// GRPC server
 	go func() {
 		log.Info().Msgf("GRPC started on :%d", cfg.GRPCServer.Port)
-		if err = s.Serve(lis); err != nil {
+		if err = grpcServer.Serve(lis); err != nil {
 			log.Error().Msgf("failed to serve: %v", err)
 			errCh <- err
 		}
@@ -159,7 +159,7 @@ func main() {
 	log.Info().Msg("Shutting Down")
 
 	// stop servers
-	s.GracefulStop()
+	grpcServer.GracefulStop()
 	if err = muxServer.Shutdown(ctx); err != nil {
 		log.Error().Msgf("failed to shutdown http server: %v", err)
 	}

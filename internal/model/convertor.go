@@ -3,41 +3,42 @@ package model
 import (
 	"database/sql"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
-	"time"
 )
 
 func ProfileModelFromSignUpRequest(userUUID uuid.UUID, in *authpb.SignUpRequest) (Profile, error) {
 	var Patronymic sql.NullString
-	if in.Patronymic != "" {
-		Patronymic.String = in.Patronymic
+	if in.GetPatronymic() != "" {
+		Patronymic.String = in.GetPatronymic()
 		Patronymic.Valid = true
 	}
 
 	layout := "2006-01-02"
-	dateOfBirth, err := time.Parse(layout, in.DateOfBirth)
+	dateOfBirth, err := time.Parse(layout, in.GetDateOfBirth())
 	if err != nil {
 		return Profile{}, fmt.Errorf("failed time.Parse with in.DateOfBirth: %w", err)
 	}
 
 	return Profile{
 		UserUUID:    userUUID,
-		FirstName:   in.FirstName,
-		LastName:    in.LastName,
+		FirstName:   in.GetFirstName(),
+		LastName:    in.GetLastName(),
 		Patronymic:  Patronymic,
 		DateOfBirth: dateOfBirth,
-		Email:       in.Email,
-		Phone:       in.Phone,
-		Address:     in.Address,
+		Email:       in.GetEmail(),
+		Phone:       in.GetPhone(),
+		Address:     in.GetAddress(),
 		CreatedAt:   time.Now().UTC(),
 	}, nil
 }
 
 func UserModelFromSignUpRequest(in *authpb.SignUpRequest) User {
 	return User{
-		Email:        in.Email,
-		PasswordHash: in.Password,
+		Email:        in.GetEmail(),
+		PasswordHash: in.GetPassword(),
 		CreatedAt:    time.Now().UTC(),
 	}
 }

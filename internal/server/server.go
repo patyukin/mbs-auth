@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 )
 

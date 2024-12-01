@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/patyukin/mbs-auth/internal/model"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
@@ -14,7 +15,7 @@ func (u *UseCase) SignInConfirmationV1UseCase(ctx context.Context, in *authpb.Si
 	var token, code, refreshToken, role string
 
 	err = u.registry.ReadCommitted(ctx, func(ctx context.Context, repo *db.Repository) error {
-		user, err = repo.SelectRegisteredUserByEmail(ctx, in.Login)
+		user, err = repo.SelectRegisteredUserByEmail(ctx, in.GetLogin())
 		if err != nil {
 			return fmt.Errorf("failed repo.SelectUserByUUID: %w", err)
 		}
@@ -24,12 +25,12 @@ func (u *UseCase) SignInConfirmationV1UseCase(ctx context.Context, in *authpb.Si
 			return fmt.Errorf("failed u.chr.Get2FACode: %w", err)
 		}
 
-		err = u.chr.Delete2FACode(ctx, in.Code)
+		err = u.chr.Delete2FACode(ctx, in.GetCode())
 		if err != nil {
 			return fmt.Errorf("failed u.chr.Delete2FACode: %w", err)
 		}
 
-		if code != in.Code {
+		if code != in.GetCode() {
 			return fmt.Errorf("invalid code")
 		}
 

@@ -3,13 +3,14 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/patyukin/mbs-auth/internal/model"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
-	"strings"
-	"time"
 )
 
 func (u *UseCase) SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error) {
@@ -20,19 +21,19 @@ func (u *UseCase) SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest)
 
 	err = u.registry.ReadCommitted(
 		ctx, func(ctx context.Context, repo *db.Repository) error {
-			in.Password, err = u.HashPassword(in.Password)
+			in.Password, err = u.HashPassword(in.GetPassword())
 			if err != nil {
 				return fmt.Errorf("failed to hash password: %w", err)
 			}
 
 			// find unique fields
-			exists, existsErr := repo.SelectUserWithExistsEmail(ctx, in.Email)
+			exists, existsErr := repo.SelectUserWithExistsEmail(ctx, in.GetEmail())
 			if existsErr != nil {
 				return fmt.Errorf("failed to check unique fields: %w", existsErr)
 			}
 
 			if exists {
-				return fmt.Errorf("user with email %s already exists, %w", in.Email, errs.ErrUserNotFound)
+				return fmt.Errorf("user with email %s already exists, %w", in.GetEmail(), errs.ErrUserNotFound)
 			}
 
 			user = model.UserModelFromSignUpRequest(in)
@@ -51,7 +52,7 @@ func (u *UseCase) SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest)
 				return fmt.Errorf("failed repo.InsertIntoProfiles: %w", err)
 			}
 
-			_, err = repo.InsertIntoTelegramUsers(ctx, userUUID, in.TelegramLogin)
+			_, err = repo.InsertIntoTelegramUsers(ctx, userUUID, in.GetTelegramLogin())
 			if err != nil {
 				return fmt.Errorf("failed repo.InsertIntoTelegramUsers: %w", err)
 			}
@@ -61,7 +62,7 @@ func (u *UseCase) SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest)
 				return fmt.Errorf("failed uuid.NewV7FromReader: %w", err)
 			}
 
-			err = u.chr.SetSignUpCode(ctx, in.TelegramLogin, code, userUUID, time.Hour)
+			err = u.chr.SetSignUpCode(ctx, in.GetTelegramLogin(), code, userUUID, time.Hour)
 			if err != nil {
 				return fmt.Errorf("failed u.chr.SetSignUpCode: %w", err)
 			}

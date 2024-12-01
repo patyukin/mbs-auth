@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/rs/zerolog/log"
 )

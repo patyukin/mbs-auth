@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+
 	"github.com/patyukin/mbs-auth/internal/db"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 )
@@ -11,7 +12,7 @@ func (u *UseCase) RefreshTokenV1UseCase(ctx context.Context, in *authpb.RefreshT
 	var token string
 
 	err := u.registry.ReadCommitted(ctx, func(ctx context.Context, repo *db.Repository) error {
-		userID, role, err := repo.SelectByID(ctx, in.RefreshToken)
+		userID, role, err := repo.SelectByID(ctx, in.GetRefreshToken())
 		if err != nil {
 			return fmt.Errorf("failed repo.SelectByID: %w", err)
 		}

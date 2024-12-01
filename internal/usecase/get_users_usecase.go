@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/patyukin/mbs-auth/internal/model"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
@@ -17,7 +18,7 @@ func (u *UseCase) GetUsersV1UseCase(ctx context.Context, in *authpb.GetUsersRequ
 				return fmt.Errorf("failed repo.SelectUsersWithTokensCount: %w", err)
 			}
 
-			users, err := repo.SelectUsersWithProfiles(ctx, in.Limit, in.Page)
+			users, err := repo.SelectUsersWithProfiles(ctx, in.GetLimit(), in.GetPage())
 			if err != nil {
 				return fmt.Errorf("failed repo.SelectUsersWithTokens: %w", err)
 			}

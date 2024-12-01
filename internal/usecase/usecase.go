@@ -5,12 +5,13 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/config"
 	"github.com/patyukin/mbs-auth/internal/db"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"time"
 )
 
 type Producer interface {

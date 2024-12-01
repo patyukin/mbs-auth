@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/patyukin/mbs-pkg/pkg/model"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/rs/zerolog/log"
 	"github.com/twmb/franz-go/pkg/kgo"
-	"strings"
 )
 
 func (u *UseCase) RegistrationSolutionProcess(ctx context.Context, record *kgo.Record) error {

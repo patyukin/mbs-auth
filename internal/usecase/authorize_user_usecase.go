@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"

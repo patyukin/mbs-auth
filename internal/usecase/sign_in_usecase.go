@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/patyukin/mbs-auth/internal/db"
 	"github.com/patyukin/mbs-auth/internal/model"
 	rabbitmqModel "github.com/patyukin/mbs-pkg/pkg/model"
@@ -20,12 +21,12 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 
 	err = u.registry.ReadCommitted(
 		ctx, func(ctx context.Context, repo *db.Repository) error {
-			user, err = repo.SelectRegisteredUserByEmail(ctx, in.Email)
+			user, err = repo.SelectRegisteredUserByEmail(ctx, in.GetEmail())
 			if err != nil {
 				return fmt.Errorf("failed to select user in repo.SelectUserByEmail: %w", err)
 			}
 
-			err = u.ComparePasswords([]byte(user.PasswordHash), in.Password)
+			err = u.ComparePasswords([]byte(user.PasswordHash), in.GetPassword())
 			if err != nil {
 				return fmt.Errorf("failed to compare passwords: %w", err)
 			}

@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+
 	"github.com/opentracing/opentracing-go"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"

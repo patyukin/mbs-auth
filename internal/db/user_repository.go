@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/model"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
 	"github.com/rs/zerolog/log"
-	"strings"
-	"time"
 )
 
 func (r *Repository) InsertIntoUsers(ctx context.Context, in model.User) (uuid.UUID, error) {
@@ -143,7 +144,7 @@ func (r *Repository) SelectUserByUUID(ctx context.Context, userUUID string) (mod
 
 func (r *Repository) SelectNotRegisteredUsers(ctx context.Context) ([]uuid.UUID, error) {
 	// TODO uncomment it
-	t := time.Now().UTC() //.Add(-2 * time.Hour)
+	t := time.Now().UTC() // .Add(-2 * time.Hour)
 	query := `
 SELECT 
   u.id 

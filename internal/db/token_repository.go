@@ -3,8 +3,9 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func (r *Repository) UpsertToken(ctx context.Context, userUUID uuid.UUID) (string, error) {

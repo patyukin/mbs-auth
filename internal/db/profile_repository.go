@@ -3,9 +3,10 @@ package db
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/model"
-	"strings"
 )
 
 func (r *Repository) InsertIntoProfiles(ctx context.Context, in model.Profile) (uuid.UUID, error) {

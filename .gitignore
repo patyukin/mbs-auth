@@ -5,3 +5,4 @@ config-local.yaml
 /auth
 /bin/*
 /vendor.protogen/*
+report.xml

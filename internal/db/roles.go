@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 	"github.com/rs/zerolog/log"
 )
@@ -30,7 +31,7 @@ WHERE ur.user_id = $1
 	AND $2 ~ ('^' || regexp_replace(p.route_path, '\{[^}]+\}', '[^/]+', 'g') || '$')
   AND p.method = $3;`
 
-	rows := r.db.QueryRowContext(ctx, query, in.UserId, in.RoutePath, in.Method)
+	rows := r.db.QueryRowContext(ctx, query, in.GetUserId(), in.GetRoutePath(), in.GetMethod())
 	if rows.Err() != nil {
 		return false, fmt.Errorf("failed r.db.QueryRowContext: %w", rows.Err())
 	}

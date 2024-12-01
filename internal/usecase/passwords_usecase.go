@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )

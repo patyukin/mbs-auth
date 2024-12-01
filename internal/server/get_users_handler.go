@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+
 	"github.com/patyukin/mbs-pkg/pkg/errs"
 	desc "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 )
@@ -15,8 +16,8 @@ func (s *Server) GetUsers(ctx context.Context, in *desc.GetUsersRequest) (*desc.
 		}, nil
 	}
 
-	if users.Error != nil {
-		return &desc.GetUsersResponse{Error: users.Error}, nil
+	if users.GetError() != nil {
+		return &desc.GetUsersResponse{Error: users.GetError()}, nil
 	}
 
 	return users, nil

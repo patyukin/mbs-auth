@@ -82,9 +82,8 @@ VALUES ('sys-admin', 'Отвечает за общую администриро�
 CREATE TABLE users_roles
 (
     id      UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES users (id),
-    role_id UUID NOT NULL REFERENCES roles (id),
-    UNIQUE (user_id, role_id)
+    user_id UUID UNIQUE NOT NULL REFERENCES users (id),
+    role_id UUID        NOT NULL REFERENCES roles (id)
 );
 
 CREATE TABLE permissions
@@ -98,7 +97,7 @@ CREATE TABLE permissions
 );
 
 INSERT INTO permissions (route_path, method, created_at)
-VALUES ('/v1/users-roles', 'GET', NOW()),
+VALUES ('/v1/users-roles', 'POST', NOW()),
        ('/v1/users/{id}', 'GET', NOW()),
        ('/v1/users', 'GET', NOW()),
        ('/v1/accounts', 'POST', NOW()),

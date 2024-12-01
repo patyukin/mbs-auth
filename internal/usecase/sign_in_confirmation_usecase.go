@@ -11,7 +11,7 @@ import (
 func (u *UseCase) SignInConfirmationV1UseCase(ctx context.Context, in *authpb.SignInConfirmationRequest) (*authpb.SignInConfirmationResponse, error) {
 	var err error
 	var user model.User
-	var token, code, refreshToken string
+	var token, code, refreshToken, role string
 
 	err = u.registry.ReadCommitted(ctx, func(ctx context.Context, repo *db.Repository) error {
 		user, err = repo.SelectRegisteredUserByEmail(ctx, in.Login)
@@ -19,7 +19,7 @@ func (u *UseCase) SignInConfirmationV1UseCase(ctx context.Context, in *authpb.Si
 			return fmt.Errorf("failed repo.SelectUserByUUID: %w", err)
 		}
 
-		code, err = u.chr.Get2FACode(ctx, in.Login)
+		code, err = u.chr.Get2FACode(ctx, user.UUID.String())
 		if err != nil {
 			return fmt.Errorf("failed u.chr.Get2FACode: %w", err)
 		}
@@ -28,12 +28,17 @@ func (u *UseCase) SignInConfirmationV1UseCase(ctx context.Context, in *authpb.Si
 		if err != nil {
 			return fmt.Errorf("failed u.chr.Delete2FACode: %w", err)
 		}
-		
+
 		if code != in.Code {
 			return fmt.Errorf("invalid code")
 		}
 
-		token, err = u.generateJWT(user.UUID.String())
+		role, err = repo.SelectRoleByUserID(ctx, user.UUID.String())
+		if err != nil {
+			return fmt.Errorf("failed repo.SelectRoleByUserID: %w", err)
+		}
+
+		token, err = u.generateJWT(user.UUID.String(), role)
 		if err != nil {
 			return fmt.Errorf("failed u.generateJWT: %w", err)
 		}

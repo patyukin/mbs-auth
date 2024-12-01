@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/model"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
-	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 	"github.com/rs/zerolog/log"
 	"strings"
 	"time"
@@ -223,7 +222,7 @@ func (r *Repository) SelectUserWithExistsEmail(ctx context.Context, email string
 	return true, nil
 }
 
-func (r *Repository) SelectUserInfoByID(ctx context.Context, userID string) (*authpb.UserInfo, error) {
+func (r *Repository) SelectUserInfoByID(ctx context.Context, userID string) (model.UserInfoDB, error) {
 	query := `
 SELECT
 		u.id,
@@ -233,32 +232,32 @@ SELECT
 		p.patronymic,
 		p.date_of_birth,
 		p.phone,
-		p.address,
+		p.address
 FROM users AS u
 INNER JOIN telegram_users AS tu ON u.id = tu.user_id
 INNER JOIN profiles AS p ON u.id = p.user_id
 WHERE u.id = $1`
 	row := r.db.QueryRowContext(ctx, query, userID)
 	if row.Err() != nil {
-		return nil, fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
+		return model.UserInfoDB{}, fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
 	}
 
-	var user authpb.UserInfo
+	var user model.UserInfoDB
 	err := row.Scan(
-		&user.Id,
+		&user.ID,
 		&user.Email,
-		&user.Profile.FirstName,
-		&user.Profile.LastName,
-		&user.Profile.Patronymic,
-		&user.Profile.DateOfBirth,
-		&user.Profile.Phone,
-		&user.Profile.Address,
+		&user.FirstName,
+		&user.LastName,
+		&user.Patronymic,
+		&user.DateOfBirth,
+		&user.Phone,
+		&user.Address,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed row.Scan: %w", err)
+		return model.UserInfoDB{}, fmt.Errorf("failed row.Scan: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 func (r *Repository) AddUserToRole(ctx context.Context, userID, role string) (string, error) {
@@ -276,4 +275,35 @@ VALUES ($1, (SELECT id FROM roles WHERE name = $2)) RETURNING id`
 	}
 
 	return id, nil
+}
+
+func (r *Repository) SelectBriefUserByUUID(ctx context.Context, userID string) (model.BriefUser, error) {
+	query := `
+SELECT
+	u.email,
+	p.first_name,
+	p.last_name,
+	tu.chat_id
+FROM users AS u
+INNER JOIN profiles AS p ON u.id = p.user_id
+INNER JOIN telegram_users AS tu ON u.id = tu.user_id
+WHERE u.id = $1
+`
+	row := r.db.QueryRowContext(ctx, query, userID)
+	if row.Err() != nil {
+		return model.BriefUser{}, fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
+	}
+
+	var user model.BriefUser
+	err := row.Scan(
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.ChatID,
+	)
+	if err != nil {
+		return model.BriefUser{}, fmt.Errorf("failed row.Scan: %w", err)
+	}
+
+	return user, nil
 }

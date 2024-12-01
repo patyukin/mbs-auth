@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
-	"time"
+	"github.com/rs/zerolog/log"
 )
 
 func (r *Repository) InsertIntoUsersRoles(ctx context.Context, userID, roleID string) error {
-	currentTime := time.Now().UTC()
-	query := `INSERT INTO users_roles (user_id, role_id, created_at) VALUES ($1, $2, $3)`
-	_, err := r.db.ExecContext(ctx, query, userID, roleID, currentTime)
+	query := `INSERT INTO users_roles (user_id, role_id) VALUES ($1, $2)`
+	_, err := r.db.ExecContext(ctx, query, userID, roleID)
 	if err != nil {
 		return fmt.Errorf("failed to insert into users_roles: %w", err)
 	}
@@ -19,17 +18,17 @@ func (r *Repository) InsertIntoUsersRoles(ctx context.Context, userID, roleID st
 }
 
 func (r *Repository) SelectExistsRowByRoleUserIDAndRoutePath(ctx context.Context, in *authpb.AuthorizeUserRequest) (bool, error) {
+	log.Debug().Msgf("in: %v", in)
 	query := `
 SELECT
-	ur.id
+  ur.id
 FROM users_roles AS ur
 INNER JOIN roles_permissions AS rp ON ur.role_id = rp.role_id
 INNER JOIN roles AS r ON rp.role_id = r.id
 INNER JOIN permissions AS p ON rp.permission_id = p.id
-WHERE 
-	ur.user_id = $1 
-  AND p.route_path = $2 
-  AND p.method = $3`
+WHERE ur.user_id = $1
+	AND $2 ~ ('^' || regexp_replace(p.route_path, '\{[^}]+\}', '[^/]+', 'g') || '$')
+  AND p.method = $3;`
 
 	rows := r.db.QueryRowContext(ctx, query, in.UserId, in.RoutePath, in.Method)
 	if rows.Err() != nil {
@@ -47,4 +46,20 @@ WHERE
 	}
 
 	return true, nil
+}
+
+func (r *Repository) SelectRoleByUserID(ctx context.Context, userID string) (string, error) {
+	query := `SELECT role_id FROM users_roles WHERE user_id = $1`
+	row := r.db.QueryRowContext(ctx, query, userID)
+	if row.Err() != nil {
+		return "", fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
+	}
+
+	var roleID string
+	err := row.Scan(&roleID)
+	if err != nil {
+		return "", fmt.Errorf("failed row.Scan: %w", err)
+	}
+
+	return roleID, nil
 }

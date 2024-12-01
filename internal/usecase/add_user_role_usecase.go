@@ -12,5 +12,5 @@ func (u *UseCase) AddUserRoleV1UseCase(ctx context.Context, in *authpb.AddUserRo
 		return nil, fmt.Errorf("failed u.registry.GetRepo().InsertIntoUsersRoles: %w", err)
 	}
 
-	return &authpb.AddUserRoleResponse{}, nil
+	return &authpb.AddUserRoleResponse{Message: "Успешно добавлено"}, nil
 }

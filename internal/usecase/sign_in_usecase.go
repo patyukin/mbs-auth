@@ -40,6 +40,11 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 			}
 
 			// Генерация уникального кода 2FA
+			code, err = u.GenerateSignInCode()
+			if err != nil {
+				return fmt.Errorf("failed to generate sign in code: %w", err)
+			}
+
 			err = u.chr.Set2FACode(ctx, user.UUID.String(), code)
 			if err != nil {
 				return fmt.Errorf("failed to set 2fa code: %w", err)

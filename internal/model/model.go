@@ -69,3 +69,21 @@ type UserRole struct {
 	UserID string `yaml:"user_id"`
 	RoleID string `yaml:"role_id"`
 }
+
+type UserInfoDB struct {
+	ID          string `json:"id"`
+	Email       string `json:"email"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Patronymic  string `json:"patronymic"`
+	DateOfBirth string `json:"date_of_birth"`
+	Phone       string `json:"phone"`
+	Address     string `json:"address"`
+}
+
+type BriefUser struct {
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	ChatID    int64  `json:"chat_id"`
+}

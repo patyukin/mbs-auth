@@ -62,10 +62,11 @@ func (u *UseCase) GenerateSignInCode() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-func (u *UseCase) generateJWT(userID string) (string, error) {
+func (u *UseCase) generateJWT(userID, role string) (string, error) {
 	claims := jwt.MapClaims{
-		"id":  userID,
-		"exp": time.Now().Add(1 * time.Hour).Unix(),
+		"id":   userID,
+		"role": role,
+		"exp":  time.Now().Add(1 * time.Hour).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

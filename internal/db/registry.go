@@ -31,7 +31,7 @@ func New(db *sql.DB) *Registry {
 	return &Registry{db: db}
 }
 
-func (registry *Registry) ReadCommitted(ctx context.Context, f Handler) error {
+func (registry *Registry) ReadCommitted(ctx context.Context, handler Handler) error {
 	tx, err := registry.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return fmt.Errorf("failed registry.db.BeginTx: %w", err)
@@ -47,7 +47,7 @@ func (registry *Registry) ReadCommitted(ctx context.Context, f Handler) error {
 
 	repo := &Repository{db: tx}
 
-	if err = f(ctx, repo); err != nil {
+	if err = handler(ctx, repo); err != nil {
 		return fmt.Errorf("failed to execute handler: %w", err)
 	}
 
@@ -59,5 +59,10 @@ func (registry *Registry) ReadCommitted(ctx context.Context, f Handler) error {
 }
 
 func (registry *Registry) Close() error {
-	return registry.db.Close()
+	err := registry.db.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close db: %w", err)
+	}
+
+	return nil
 }

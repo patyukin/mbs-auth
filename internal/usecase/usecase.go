@@ -74,5 +74,10 @@ func (u *UseCase) generateJWT(userID, role string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString(u.jwtSecret)
+	signedString, err := token.SignedString(u.jwtSecret)
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
+
+	return signedString, nil
 }

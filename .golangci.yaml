@@ -519,6 +519,8 @@ linters-settings:
       - h
       - uc
       - cj
+      - cl
+      - tx
   promlinter:
     # Promlinter cannot infer all metrics name in static analysis.
     # Enable strict mode will also include the errors caused by failing to parse the args.

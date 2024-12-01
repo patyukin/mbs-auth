@@ -136,7 +136,7 @@ func main() {
 
 	// metrics + pprof server
 	go func() {
-		if err = muxServer.Run(cfg.HttpServer.Port); err != nil {
+		if err = muxServer.Run(cfg.HTTPServer.Port); err != nil {
 			log.Error().Msgf("Failed to serve Prometheus metrics: %v", err)
 			errCh <- err
 		}

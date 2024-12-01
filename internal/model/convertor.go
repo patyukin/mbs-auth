@@ -46,17 +46,17 @@ func UserModelFromSignUpRequest(in *authpb.SignUpRequest) User {
 func ToProtoUserInfo(users []UserWithProfile) []*authpb.UserInfo {
 	result := make([]*authpb.UserInfo, 0, len(users))
 	for i := range users {
-		u := &users[i]
+		usrs := &users[i]
 		result = append(result, &authpb.UserInfo{
-			Id:    u.ID,
-			Email: u.Email,
+			Id:    usrs.ID,
+			Email: usrs.Email,
 			Profile: &authpb.Profile{
-				FirstName:   u.FirstName,
-				LastName:    u.LastName,
-				Patronymic:  u.Patronymic.String,
-				DateOfBirth: u.DateOfBirth.Format("2006-01-02"),
-				Phone:       u.Phone,
-				Address:     u.Address,
+				FirstName:   usrs.FirstName,
+				LastName:    usrs.LastName,
+				Patronymic:  usrs.Patronymic.String,
+				DateOfBirth: usrs.DateOfBirth.Format("2006-01-02"),
+				Phone:       usrs.Phone,
+				Address:     usrs.Address,
 			},
 		})
 	}

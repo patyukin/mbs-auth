@@ -18,7 +18,7 @@ func (u *UseCase) HashPassword(password string) (string, error) {
 
 func (u *UseCase) ComparePasswords(hashedPassword []byte, plainPassword string) error {
 	err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(plainPassword))
-	return err
+	return fmt.Errorf("failed bcrypt.CompareHashAndPassword: %w", err)
 }
 
 func (u *UseCase) CheckPasswordHash(password, hashedPassword string) bool {

@@ -72,7 +72,7 @@ func (r *Cacher) DeleteSignUpCode(ctx context.Context, tgUserName string) error 
 }
 
 func (r *Cacher) Set2FACode(ctx context.Context, userID, code string) error {
-	err := r.client.Set(ctx, fmt.Sprintf("otp2fa:%s", userID), code, 24*time.Hour).Err()
+	err := r.client.Set(ctx, "otp2fa:"+userID, code, 24*time.Hour).Err()
 	if err != nil {
 		return fmt.Errorf("failed to set 2fa code: %w", err)
 	}
@@ -81,7 +81,7 @@ func (r *Cacher) Set2FACode(ctx context.Context, userID, code string) error {
 }
 
 func (r *Cacher) Get2FACode(ctx context.Context, userID string) (string, error) {
-	code, err := r.client.Get(ctx, fmt.Sprintf("otp2fa:%s", userID)).Result()
+	code, err := r.client.Get(ctx, "otp2fa:"+userID).Result()
 	if err != nil {
 		return "", fmt.Errorf("failed to get 2fa code: %w", err)
 	}
@@ -90,7 +90,7 @@ func (r *Cacher) Get2FACode(ctx context.Context, userID string) (string, error) 
 }
 
 func (r *Cacher) Delete2FACode(ctx context.Context, userID string) error {
-	err := r.client.Del(ctx, fmt.Sprintf("otp2fa:%s", userID)).Err()
+	err := r.client.Del(ctx, "otp2fa:"+userID).Err()
 	if err != nil {
 		return fmt.Errorf("failed to delete 2fa code: %w", err)
 	}

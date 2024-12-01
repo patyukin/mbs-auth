@@ -9,7 +9,7 @@ import (
 type Config struct {
 	MinLogLevel string `validate:"required,oneof=debug info warn error" yaml:"min_log_level"`
 	JwtSecret   string `validate:"required"                             yaml:"jwt_secret"`
-	HttpServer  struct {
+	HTTPServer  struct {
 		Port int `validate:"required,numeric" yaml:"port"`
 	} `yaml:"http_server" validate:"required"`
 	GRPCServer struct {

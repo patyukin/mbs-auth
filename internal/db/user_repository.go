@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/model"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
-	"github.com/rs/zerolog/log"
 )
 
 func (r *Repository) InsertIntoUsers(ctx context.Context, in model.User) (uuid.UUID, error) {
@@ -46,7 +45,7 @@ func (r *Repository) SelectUsersWithProfilesCount(ctx context.Context) (int32, e
 	return count, nil
 }
 
-func (r *Repository) SelectUsersWithProfiles(ctx context.Context, limit int32, page int32) ([]model.UserWithProfile, error) {
+func (r *Repository) SelectUsersWithProfiles(ctx context.Context, limit, page int32) ([]model.UserWithProfile, error) {
 	offset := (int(page) - 1) * int(limit)
 
 	query := `
@@ -74,12 +73,7 @@ OFFSET $1 LIMIT $2;
 		return nil, fmt.Errorf("failed rows.Err(): %w", err)
 	}
 
-	defer func(rows *sql.Rows) {
-		err = rows.Close()
-		if err != nil {
-			log.Error().Msgf("failed rows.Close: %v", err)
-		}
-	}(rows)
+	defer rows.Close()
 
 	var uwps []model.UserWithProfile
 
@@ -158,11 +152,7 @@ WHERE tu.chat_id IS NULL
 	if err != nil {
 		return nil, fmt.Errorf("failed to select users in r.db.QueryContext: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		if err = rows.Close(); err != nil {
-			log.Error().Msgf("failed rows.Close: %v", err)
-		}
-	}(rows)
+	defer rows.Close()
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed during row iteration in rows.Err(): %w", err)

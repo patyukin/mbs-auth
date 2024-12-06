@@ -16,8 +16,7 @@ func ProfileModelFromSignUpRequest(userUUID uuid.UUID, in *authpb.SignUpRequest)
 		Patronymic.Valid = true
 	}
 
-	layout := "2006-01-02"
-	dateOfBirth, err := time.Parse(layout, in.GetDateOfBirth())
+	dateOfBirth, err := time.Parse(time.DateOnly, in.GetDateOfBirth())
 	if err != nil {
 		return Profile{}, fmt.Errorf("failed time.Parse with in.DateOfBirth: %w", err)
 	}
@@ -47,18 +46,20 @@ func ToProtoUserInfo(users []UserWithProfile) []*authpb.UserInfo {
 	result := make([]*authpb.UserInfo, 0, len(users))
 	for i := range users {
 		usrs := &users[i]
-		result = append(result, &authpb.UserInfo{
-			Id:    usrs.ID,
-			Email: usrs.Email,
-			Profile: &authpb.Profile{
-				FirstName:   usrs.FirstName,
-				LastName:    usrs.LastName,
-				Patronymic:  usrs.Patronymic.String,
-				DateOfBirth: usrs.DateOfBirth.Format("2006-01-02"),
-				Phone:       usrs.Phone,
-				Address:     usrs.Address,
+		result = append(
+			result, &authpb.UserInfo{
+				Id:    usrs.ID,
+				Email: usrs.Email,
+				Profile: &authpb.Profile{
+					FirstName:   usrs.FirstName,
+					LastName:    usrs.LastName,
+					Patronymic:  usrs.Patronymic.String,
+					DateOfBirth: usrs.DateOfBirth.Format(time.DateOnly),
+					Phone:       usrs.Phone,
+					Address:     usrs.Address,
+				},
 			},
-		})
+		)
 	}
 
 	return result

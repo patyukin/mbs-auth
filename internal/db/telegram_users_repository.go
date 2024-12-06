@@ -3,10 +3,11 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/patyukin/mbs-auth/internal/model"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/patyukin/mbs-auth/internal/model"
 )
 
 func (r *Repository) InsertIntoTelegramUsers(ctx context.Context, userUUID uuid.UUID, telegramLogin string) (uuid.UUID, error) {

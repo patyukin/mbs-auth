@@ -3,12 +3,11 @@ package usecase
 import (
 	"fmt"
 
-	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func (u *UseCase) HashPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		return "", fmt.Errorf("failed bcrypt.GenerateFromPassword: %w", err)
 	}
@@ -16,17 +15,11 @@ func (u *UseCase) HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-func (u *UseCase) ComparePasswords(hashedPassword []byte, plainPassword string) error {
-	err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(plainPassword))
-	return fmt.Errorf("failed bcrypt.CompareHashAndPassword: %w", err)
-}
-
-func (u *UseCase) CheckPasswordHash(password, hashedPassword string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+func (u *UseCase) ComparePasswords(hashedPassword, plainPassword string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
 	if err != nil {
-		log.Error().Msgf("failed bcrypt.CompareHashAndPassword: %v", err)
-		return false
+		return fmt.Errorf("failed bcrypt.CompareHashAndPassword: %w", err)
 	}
 
-	return true
+	return nil
 }

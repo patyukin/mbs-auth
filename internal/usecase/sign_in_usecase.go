@@ -27,7 +27,7 @@ func (u *UseCase) SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest)
 				return fmt.Errorf("failed to select user in repo.SelectUserByEmail: %w", err)
 			}
 
-			err = u.ComparePasswords([]byte(user.PasswordHash), in.GetPassword())
+			err = u.ComparePasswords(user.PasswordHash, in.GetPassword())
 			if err != nil {
 				return fmt.Errorf("failed to compare passwords: %w", err)
 			}

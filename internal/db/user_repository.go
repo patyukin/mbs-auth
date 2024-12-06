@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/patyukin/mbs-auth/internal/model"
 	"github.com/patyukin/mbs-pkg/pkg/errs"
+	"github.com/rs/zerolog/log"
 )
 
 func (r *Repository) InsertIntoUsers(ctx context.Context, in *model.User) (uuid.UUID, error) {

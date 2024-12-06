@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,6 +13,10 @@ import (
 	"github.com/patyukin/mbs-auth/internal/config"
 	"github.com/patyukin/mbs-auth/internal/db"
 	amqp "github.com/rabbitmq/amqp091-go"
+)
+
+var (
+	ErrCodesNotEqual = errors.New("codes are not equal")
 )
 
 const maxBytes = 30

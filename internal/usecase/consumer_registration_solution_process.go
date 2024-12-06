@@ -23,47 +23,49 @@ func (u *UseCase) RegistrationSolutionProcess(ctx context.Context, record *kgo.R
 		return fmt.Errorf("failed to unmarshal message: %w", err)
 	}
 
-	err := u.registry.ReadCommitted(ctx, func(ctx context.Context, repo *db.Repository) error {
-		allSignUpCode, err := u.chr.GetSignUpCode(ctx, message.UserTelegramLogin)
-		log.Debug().Msgf("allSignUpCode: %s", allSignUpCode)
-		if err != nil {
-			return fmt.Errorf("failed to get sign up code: %w", err)
-		}
+	err := u.registry.ReadCommitted(
+		ctx, func(ctx context.Context, repo *db.Repository) error {
+			allSignUpCode, err := u.chr.GetSignUpCode(ctx, message.UserTelegramLogin)
+			log.Debug().Msgf("allSignUpCode: %s", allSignUpCode)
+			if err != nil {
+				return fmt.Errorf("failed to get sign up code: %w", err)
+			}
 
-		result := strings.SplitN(allSignUpCode, ":", 2)
+			result := strings.SplitN(allSignUpCode, ":", 2)
 
-		signUpCode, err := uuid.Parse(result[0])
-		if err != nil {
-			return fmt.Errorf("failed to parse sign up code: %w", err)
-		}
+			signUpCode, err := uuid.Parse(result[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse sign up code: %w", err)
+			}
 
-		if signUpCode.String() != message.Code {
-			return fmt.Errorf("invalid sign up code: %w", err)
-		}
+			if signUpCode.String() != message.Code {
+				return fmt.Errorf("invalid sign up code: %w", err)
+			}
 
-		err = u.chr.DeleteSignUpCode(ctx, message.UserTelegramLogin)
-		if err != nil {
-			return fmt.Errorf("failed to delete sign up code: %w", err)
-		}
+			err = u.chr.DeleteSignUpCode(ctx, message.UserTelegramLogin)
+			if err != nil {
+				return fmt.Errorf("failed to delete sign up code: %w", err)
+			}
 
-		userUUID, err := uuid.Parse(result[1])
-		if err != nil {
-			return fmt.Errorf("failed to parse user uuid: %w", err)
-		}
+			userUUID, err := uuid.Parse(result[1])
+			if err != nil {
+				return fmt.Errorf("failed to parse user uuid: %w", err)
+			}
 
-		err = repo.UpdateTelegramUserAfterSignUp(ctx, userUUID, message.ChatID, message.UserTelegramID)
-		if err != nil {
-			return fmt.Errorf("failed to update telegram user: %w", err)
-		}
+			err = repo.UpdateTelegramUserAfterSignUp(ctx, userUUID, message.ChatID, message.UserTelegramID)
+			if err != nil {
+				return fmt.Errorf("failed to update telegram user: %w", err)
+			}
 
-		// add user role
-		_, err = repo.AddUserToRole(ctx, userUUID.String(), "user")
-		if err != nil {
-			return fmt.Errorf("failed to add user to role: %w", err)
-		}
+			// add user role
+			_, err = repo.AddUserToRole(ctx, userUUID.String(), "user")
+			if err != nil {
+				return fmt.Errorf("failed to add user to role: %w", err)
+			}
 
-		return nil
-	})
+			return nil
+		},
+	)
 	if err != nil {
 		sendErr := sendToQueue(ctx, u.prdcr.EnqueueTelegramMessage, message.ChatID, "Error was encountered. Please try again.")
 		if sendErr != nil {

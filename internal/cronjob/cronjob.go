@@ -30,24 +30,28 @@ func (cj *CronJob) Stop() {
 }
 
 func (cj *CronJob) Run(ctx context.Context) error {
-	_, err := cj.c.AddFunc("*/10 * * * *", func() {
-		log.Info().Msg("run cj.uc.CleanExpiredTokens")
+	_, err := cj.c.AddFunc(
+		"*/10 * * * *", func() {
+			log.Info().Msg("run cj.uc.CleanExpiredTokens")
 
-		if localErr := cj.uc.CleanExpiredTokens(ctx); localErr != nil {
-			log.Error().Msgf("failed cj.uc.CleanExpiredTokens, err: %v", localErr)
-		}
-	})
+			if localErr := cj.uc.CleanExpiredTokens(ctx); localErr != nil {
+				log.Error().Msgf("failed cj.uc.CleanExpiredTokens, err: %v", localErr)
+			}
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("failed adding cron job cj.uc.CleanExpiredTokens: %w", err)
 	}
 
-	_, err = cj.c.AddFunc("0 * * * *", func() {
-		log.Info().Msg("run cj.uc.RemoveNotRegisteredUsers")
+	_, err = cj.c.AddFunc(
+		"0 * * * *", func() {
+			log.Info().Msg("run cj.uc.RemoveNotRegisteredUsers")
 
-		if localErr := cj.uc.RemoveNotRegisteredUsers(ctx); localErr != nil {
-			log.Error().Msgf("failed cj.uc.RemoveNotRegisteredUsers, err: %v", localErr)
-		}
-	})
+			if localErr := cj.uc.RemoveNotRegisteredUsers(ctx); localErr != nil {
+				log.Error().Msgf("failed cj.uc.RemoveNotRegisteredUsers, err: %v", localErr)
+			}
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("failed adding cron job cj.uc.RemoveNotRegisteredUsers: %w", err)
 	}

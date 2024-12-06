@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/patyukin/mbs-pkg/pkg/proto/error_v1"
 	"net/http"
 
 	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
+	"github.com/patyukin/mbs-pkg/pkg/proto/error_v1"
 	"github.com/rs/zerolog/log"
 )
 

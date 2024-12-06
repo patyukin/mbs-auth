@@ -29,7 +29,7 @@ INNER JOIN roles AS r ON rp.role_id = r.id
 INNER JOIN permissions AS p ON rp.permission_id = p.id
 WHERE ur.user_id = $1
 	AND $2 ~ ('^' || regexp_replace(p.route_path, '\{[^}]+\}', '[^/]+', 'g') || '$')
-  AND p.method = $3;`
+  AND p.method = $3`
 
 	rows := r.db.QueryRowContext(ctx, query, in.GetUserId(), in.GetRoutePath(), in.GetMethod())
 	if rows.Err() != nil {

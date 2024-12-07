@@ -46,6 +46,9 @@ func (r *Repository) CleanExpiredTokens(ctx context.Context) error {
 }
 
 func (r *Repository) SelectByID(ctx context.Context, token string) (string, string, error) {
+	var err error
+	var userID, role string
+
 	timeNow := time.Now().UTC()
 	query := `
 SELECT
@@ -60,8 +63,7 @@ WHERE token = $1 AND expires_at > $2`
 		return "", "", fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())
 	}
 
-	var userID, role string
-	err := row.Scan(&userID, &role)
+	err = row.Scan(&userID, &role)
 	if err != nil {
 		return "", "", fmt.Errorf("failed row.Scan: %w", err)
 	}

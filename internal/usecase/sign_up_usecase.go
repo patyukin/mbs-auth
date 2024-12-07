@@ -47,7 +47,7 @@ func (u *UseCase) SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest)
 				return fmt.Errorf("failed model.ProfileModelFromSignUpRequest: %w", err)
 			}
 
-			_, err = repo.InsertIntoProfiles(ctx, profile)
+			_, err = repo.InsertIntoProfiles(ctx, &profile)
 			if err != nil {
 				return fmt.Errorf("failed repo.InsertIntoProfiles: %w", err)
 			}
@@ -75,9 +75,7 @@ func (u *UseCase) SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest)
 	}
 
 	return &authpb.SignUpResponse{
-		Message: fmt.Sprintf(
-			"1 час для окончания регистрации. Пожалуйста, перейдите по ссылке в telegram бот и нажмите /start для завершения регистрации: %s",
-			fmt.Sprintf("https://t.me/%s?start=%s", u.GetTelegramBot(), code.String()),
-		),
+		Message: "1 час для окончания регистрации. Пожалуйста, перейдите по ссылке в telegram бот и нажмите /start для завершения регистрации: " +
+			"https://t.me/" + u.GetTelegramBot() + "?start=" + code.String(),
 	}, nil
 }

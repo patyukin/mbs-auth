@@ -14,6 +14,8 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
+const partCount = 2
+
 func (u *UseCase) RegistrationSolutionProcess(ctx context.Context, record *kgo.Record) error {
 	var message model.AuthSignUpConfirmCode
 
@@ -31,7 +33,7 @@ func (u *UseCase) RegistrationSolutionProcess(ctx context.Context, record *kgo.R
 				return fmt.Errorf("failed to get sign up code: %w", err)
 			}
 
-			result := strings.SplitN(allSignUpCode, ":", 2)
+			result := strings.SplitN(allSignUpCode, ":", partCount)
 
 			signUpCode, err := uuid.Parse(result[0])
 			if err != nil {

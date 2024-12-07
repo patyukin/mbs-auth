@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	ErrCodesNotEqual = errors.New("codes are not equal")
+	ErrCodesNotEqual          = errors.New("codes are not equal")
+	ErrTelegramChatIDNotFound = errors.New("telegram chat id not found")
 )
 
 const maxBytes = 30

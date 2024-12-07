@@ -58,10 +58,10 @@ func (u *UseCase) RegistrationSolutionProcess(ctx context.Context, record *kgo.R
 			}
 
 			// add user role
-			_, err = repo.AddUserToRole(ctx, userUUID.String(), "user")
-			if err != nil {
-				return fmt.Errorf("failed to add user to role: %w", err)
-			}
+			//_, err = repo.AddUserToRole(ctx, userUUID.String(), "user")
+			//if err != nil {
+			//	return fmt.Errorf("failed to add user to role: %w", err)
+			//}
 
 			return nil
 		},

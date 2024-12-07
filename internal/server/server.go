@@ -2,15 +2,20 @@ package server
 
 import (
 	"context"
-	"fmt"
-	authpb "github.com/patyukin/mbs-auth/pkg/auth_v1"
-	"github.com/rs/zerolog/log"
+
+	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 )
 
 type UseCase interface {
-	SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error)
-	GetUsersWithTokens(ctx context.Context, in *authpb.GetUsersWithTokensRequest) (*authpb.GetUsersWithTokensResponse, error)
-	GetUsersWithProfiles(ctx context.Context, in *authpb.GetUsersWithProfilesRequest) (*authpb.GetUsersWithProfilesResponse, error)
+	SignUpV1UseCase(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error)
+	SignInV1UseCase(ctx context.Context, in *authpb.SignInRequest) (*authpb.SignInResponse, error)
+	SignInConfirmationV1UseCase(ctx context.Context, in *authpb.SignInConfirmationRequest) (*authpb.SignInConfirmationResponse, error)
+	GetUserByIDUseCase(ctx context.Context, in *authpb.GetUserByIDRequest) (*authpb.GetUserByIDResponse, error)
+	GetBriefUserByID(ctx context.Context, in *authpb.GetBriefUserByIDRequest) (*authpb.GetBriefUserByIDResponse, error)
+	GetUsersV1UseCase(ctx context.Context, in *authpb.GetUsersRequest) (*authpb.GetUsersResponse, error)
+	AddUserRoleV1UseCase(ctx context.Context, in *authpb.AddUserRoleRequest) (*authpb.AddUserRoleResponse, error)
+	AuthorizeUserV1UseCase(ctx context.Context, in *authpb.AuthorizeUserRequest) (*authpb.AuthorizeUserResponse, error)
+	RefreshTokenV1UseCase(ctx context.Context, in *authpb.RefreshTokenRequest) (*authpb.RefreshTokenResponse, error)
 }
 
 type Server struct {
@@ -22,41 +27,4 @@ func New(uc UseCase) *Server {
 	return &Server{
 		uc: uc,
 	}
-}
-
-func (s *Server) SignUp(ctx context.Context, in *authpb.SignUpRequest) (*authpb.SignUpResponse, error) {
-	response, err := s.uc.SignUp(ctx, in)
-	if err != nil {
-		return nil, fmt.Errorf("failed uc.SignUp: %w", err)
-	}
-
-	return response, nil
-}
-
-func (s *Server) SignIn(ctx context.Context, in *authpb.SignInRequest) (*authpb.SignInResponse, error) {
-	panic("qwe")
-}
-
-func (s *Server) GetUserByUUID(ctx context.Context, in *authpb.GetUserByUUIDRequest) (*authpb.GetUserByUUIDResponse, error) {
-	panic("qwe")
-}
-
-func (s *Server) GetUsersWithTokens(ctx context.Context, in *authpb.GetUsersWithTokensRequest) (*authpb.GetUsersWithTokensResponse, error) {
-	response, err := s.uc.GetUsersWithTokens(ctx, in)
-	if err != nil {
-		log.Error().Msgf("failed uc.GetUsersWithTokens: %v", err)
-		return nil, fmt.Errorf("failed GetUsersWithTokens")
-	}
-
-	return response, nil
-}
-
-func (s *Server) GetUsersWithProfiles(ctx context.Context, in *authpb.GetUsersWithProfilesRequest) (*authpb.GetUsersWithProfilesResponse, error) {
-	response, err := s.uc.GetUsersWithProfiles(ctx, in)
-	if err != nil {
-		log.Error().Msgf("failed uc.GetUsersWithProfiles: %v", err)
-		return nil, fmt.Errorf("failed GetUsersWithProfiles")
-	}
-
-	return response, nil
 }

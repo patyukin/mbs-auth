@@ -2,63 +2,39 @@ package config
 
 import (
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	"gopkg.in/yaml.v3"
-	"log"
-	"os"
+
+	configLoader "github.com/patyukin/mbs-pkg/pkg/config"
 )
 
 type Config struct {
-	MinLogLevel string `yaml:"min_log_level" validate:"required,oneof=debug info warn error"`
-	JwtSecret   string `yaml:"jwt_secret" validate:"required"`
-	HttpServer  struct {
-		Port int `yaml:"port" validate:"required,numeric"`
+	MinLogLevel string `validate:"required,oneof=debug info warn error" yaml:"min_log_level"`
+	JwtSecret   string `validate:"required"                             yaml:"jwt_secret"`
+	HTTPServer  struct {
+		Port int `validate:"required,numeric" yaml:"port"`
 	} `yaml:"http_server" validate:"required"`
-	SwaggerServer struct {
-		Port int `yaml:"port" validate:"required,numeric"`
-	} `yaml:"swagger_server" validate:"required"`
 	GRPCServer struct {
-		Port int `yaml:"port" validate:"required,numeric"`
+		Port              int `validate:"required,numeric" yaml:"port"`
+		MaxConnectionIdle int `yaml:"max_connection_idle"`
+		Timeout           int `yaml:"timeout"`
+		MaxConnectionAge  int `yaml:"max_connection_age"`
 	} `yaml:"grpc_server" validate:"required"`
-	PostgreSQL struct {
-		Host     string `yaml:"host" validate:"required"`
-		Port     int    `yaml:"port" validate:"required,numeric"`
-		User     string `yaml:"user" validate:"required"`
-		Password string `yaml:"password" validate:"required"`
-		Name     string `yaml:"name" validate:"required"`
-	} `yaml:"postgresql"`
-	Redis struct {
-		Host string `yaml:"host" validate:"required"`
-		Port int    `yaml:"port" validate:"required,numeric"`
-	} `yaml:"redis"`
+	PostgreSQLDSN string `validate:"required" yaml:"postgresql_dsn"`
+	RedisDSN      string `validate:"required" yaml:"redis_dsn"`
+	RabbitMQUrl   string `validate:"required" yaml:"rabbitmq_url"`
+	Kafka         struct {
+		Brokers       []string `validate:"required" yaml:"brokers"`
+		ConsumerGroup string   `validate:"required" yaml:"consumer_group"`
+		Topics        []string `validate:"required" yaml:"topics"`
+	} `yaml:"kafka" validate:"required"`
+	TelegramBotName string `validate:"required" yaml:"telegram_bot_name"`
+	TracerHost      string `validate:"required" yaml:"tracer_host"`
 }
 
 func LoadConfig() (*Config, error) {
-	yamlConfigFilePath := os.Getenv("YAML_CONFIG_FILE_PATH")
-	if yamlConfigFilePath == "" {
-		return nil, fmt.Errorf("yaml config file path is not set")
-	}
-
-	f, err := os.Open(yamlConfigFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to open config file: %w", err)
-	}
-
-	defer func(f *os.File) {
-		if err = f.Close(); err != nil {
-			log.Printf("unable to close config file: %v", err)
-		}
-	}(f)
-
 	var config Config
-	decoder := yaml.NewDecoder(f)
-	if err = decoder.Decode(&config); err != nil {
-		return nil, fmt.Errorf("unable to decode config file: %w", err)
-	}
-
-	validate := validator.New()
-	if err = validate.Struct(&config); err != nil {
-		return nil, fmt.Errorf("config validation failed: %w", err)
+	err := configLoader.LoadConfig(&config)
+	if err != nil {
+		return nil, fmt.Errorf("error loading config: %w", err)
 	}
 
 	return &config, nil

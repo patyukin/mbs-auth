@@ -1,77 +1,135 @@
 package cacher
 
 import (
-	"auth-telegram/internal/config"
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
-	"net"
-	"strconv"
-	"time"
 )
 
 type Cacher struct {
 	client *redis.Client
 }
 
-func New(ctx context.Context, cfg *config.Config) (*Cacher, error) {
-	c := redis.NewClient(&redis.Options{Addr: net.JoinHostPort(cfg.Redis.Host, strconv.Itoa(cfg.Redis.Port))})
+func New(ctx context.Context, dsn string) (*Cacher, error) {
+	cl := redis.NewClient(&redis.Options{Addr: dsn})
 
-	err := c.Ping(ctx).Err()
+	err := cl.Ping(ctx).Err()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to redis: %w", err)
 	}
 
 	log.Info().Msg("connected to redis")
-	return &Cacher{client: c}, nil
+	return &Cacher{client: cl}, nil
 }
 
 func (r *Cacher) SetVerificationCode(ctx context.Context, telegramUserID int, code string, expiration time.Duration) error {
-	return r.client.Set(ctx, fmt.Sprintf("code:%d", telegramUserID), code, expiration).Err()
+	err := r.client.Set(ctx, fmt.Sprintf("code:%d", telegramUserID), code, expiration).Err()
+	if err != nil {
+		return fmt.Errorf("failed to set verification code: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Cacher) GetVerificationCode(ctx context.Context, telegramUserID int) (string, error) {
-	return r.client.Get(ctx, fmt.Sprintf("code:%d", telegramUserID)).Result()
+	code, err := r.client.Get(ctx, fmt.Sprintf("code:%d", telegramUserID)).Result()
+	if err != nil {
+		return "", fmt.Errorf("failed to get verification code: %w", err)
+	}
+
+	return code, nil
 }
 
 func (r *Cacher) SetSignUpCode(ctx context.Context, tgUserName string, code, userUUID uuid.UUID, expiration time.Duration) error {
-	return r.client.Set(ctx, "user:"+tgUserName, fmt.Sprintf("%s:%s", code.String(), userUUID), expiration).Err()
+	err := r.client.Set(ctx, "user:"+tgUserName, fmt.Sprintf("%s:%s", code.String(), userUUID.String()), expiration).Err()
+	if err != nil {
+		return fmt.Errorf("failed to set sign up code: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Cacher) GetSignUpCode(ctx context.Context, tgUserName string) (string, error) {
-	return r.client.Get(ctx, "user:"+tgUserName).Result()
+	code, err := r.client.Get(ctx, "user:"+tgUserName).Result()
+	if err != nil {
+		return "", fmt.Errorf("failed to get sign up code: %w", err)
+	}
+
+	return code, nil
 }
 
 func (r *Cacher) DeleteSignUpCode(ctx context.Context, tgUserName string) error {
-	return r.client.Del(ctx, "user:"+tgUserName).Err()
+	err := r.client.Del(ctx, "user:"+tgUserName).Err()
+	if err != nil {
+		return fmt.Errorf("failed to delete sign up code: %w", err)
+	}
+
+	return nil
 }
 
-func (r *Cacher) Exists2FACode(ctx context.Context, code string) (int64, error) {
-	return r.client.Exists(ctx, code).Result()
+func (r *Cacher) Set2FACode(ctx context.Context, userID, code string) error {
+	err := r.client.Set(ctx, "otp2fa:"+userID, code, 24*time.Hour).Err()
+	if err != nil {
+		return fmt.Errorf("failed to set 2fa code: %w", err)
+	}
+
+	return nil
 }
 
-func (r *Cacher) Set2FACode(ctx context.Context, code, userID string, expiration time.Duration) error {
-	return r.client.Set(ctx, code, userID, expiration).Err()
+func (r *Cacher) Get2FACode(ctx context.Context, userID string) (string, error) {
+	code, err := r.client.Get(ctx, "otp2fa:"+userID).Result()
+	if err != nil {
+		return "", fmt.Errorf("failed to get 2fa code: %w", err)
+	}
+
+	return code, nil
 }
 
-func (r *Cacher) Get2FACode(ctx context.Context, code string) (string, error) {
-	return r.client.Get(ctx, code).Result()
+func (r *Cacher) Delete2FACode(ctx context.Context, userID string) error {
+	err := r.client.Del(ctx, "otp2fa:"+userID).Err()
+	if err != nil {
+		return fmt.Errorf("failed to delete 2fa code: %w", err)
+	}
+
+	return nil
 }
 
-func (r *Cacher) Delete2FACode(ctx context.Context, code string) error {
-	return r.client.Del(ctx, code).Err()
-}
+func (r *Cacher) SetTempCode(ctx context.Context, userID, code string, expiration time.Duration) error {
+	err := r.client.Set(ctx, "tempcode:"+userID, code, expiration).Err()
+	if err != nil {
+		return fmt.Errorf("failed to set temp code: %w", err)
+	}
 
-func (r *Cacher) SetTempCode(ctx context.Context, userID string, code string, expiration time.Duration) error {
-	return r.client.Set(ctx, "tempcode:"+userID, code, expiration).Err()
+	return nil
 }
 
 func (r *Cacher) GetTempCode(ctx context.Context, userID string) (string, error) {
-	return r.client.Get(ctx, "tempcode:"+userID).Result()
+	code, err := r.client.Get(ctx, "tempcode:"+userID).Result()
+	if err != nil {
+		return "", fmt.Errorf("failed to get temp code: %w", err)
+	}
+
+	return code, nil
 }
 
 func (r *Cacher) DeleteTempCode(ctx context.Context, userID string) error {
-	return r.client.Del(ctx, "tempcode:"+userID).Err()
+	err := r.client.Del(ctx, "tempcode:"+userID).Err()
+	if err != nil {
+		return fmt.Errorf("failed to delete temp code: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Cacher) Close() error {
+	err := r.client.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close redis: %w", err)
+	}
+
+	return nil
 }

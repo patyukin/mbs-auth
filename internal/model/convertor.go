@@ -3,86 +3,88 @@ package model
 import (
 	"database/sql"
 	"fmt"
-	"github.com/google/uuid"
-	authpb "github.com/patyukin/mbs-auth/pkg/auth_v1"
 	"time"
+
+	"github.com/google/uuid"
+	authpb "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
 )
 
 func ProfileModelFromSignUpRequest(userUUID uuid.UUID, in *authpb.SignUpRequest) (Profile, error) {
 	var Patronymic sql.NullString
-	if in.Patronymic != "" {
-		Patronymic.String = in.Patronymic
+	if in.GetPatronymic() != "" {
+		Patronymic.String = in.GetPatronymic()
 		Patronymic.Valid = true
 	}
 
-	layout := "02-01-2006"
-	dateOfBirth, err := time.Parse(layout, in.DateOfBirth)
+	dateOfBirth, err := time.Parse(time.DateOnly, in.GetDateOfBirth())
 	if err != nil {
 		return Profile{}, fmt.Errorf("failed time.Parse with in.DateOfBirth: %w", err)
 	}
 
 	return Profile{
 		UserUUID:    userUUID,
-		FirstName:   in.FirstName,
-		LastName:    in.LastName,
+		FirstName:   in.GetFirstName(),
+		LastName:    in.GetLastName(),
 		Patronymic:  Patronymic,
 		DateOfBirth: dateOfBirth,
-		Email:       in.Email,
-		Phone:       in.Phone,
-		Address:     in.Address,
+		Email:       in.GetEmail(),
+		Phone:       in.GetPhone(),
+		Address:     in.GetAddress(),
 		CreatedAt:   time.Now().UTC(),
-	}, nil
-}
-
-func UsersWithProfilesResponseFromUserWithProfile(u []UserWithProfile) []*authpb.UserGUWP {
-	var users []*authpb.UserGUWP
-	for _, v := range u {
-		profile := &authpb.ProfileGUWP{
-			FirstName:   v.FirstName,
-			LastName:    v.LastName,
-			Patronymic:  v.Patronymic.String,
-			DateOfBirth: v.DateOfBirth.Format(time.DateOnly),
-			Email:       v.ProfileEmail,
-			Phone:       v.Phone,
-			Address:     v.Address,
-		}
-
-		user := &authpb.UserGUWP{
-			Id:      v.ID,
-			Email:   v.Email,
-			Role:    v.Role,
-			Profile: profile,
-		}
-
-		users = append(users, user)
-	}
-
-	return users
-}
-
-func TelegramUserModelFromSignUpRequest(userUUID uuid.UUID, in *authpb.SignUpRequest) (TelegramUser, error) {
-	return TelegramUser{
-		UserUUID:      userUUID,
-		TelegramLogin: in.TelegramLogin,
-		CreatedAt:     time.Now().UTC(),
 	}, nil
 }
 
 func UserModelFromSignUpRequest(in *authpb.SignUpRequest) User {
 	return User{
-		Email:        in.Email,
-		PasswordHash: in.Password,
-		Role:         "user",
+		Email:        in.GetEmail(),
+		PasswordHash: in.GetPassword(),
 		CreatedAt:    time.Now().UTC(),
 	}
 }
 
-func SignUpRequestToUserModel(in *authpb.SignUpRequest) *User {
-	return &User{
-		UUID:         uuid.New(),
-		Email:        in.Email,
-		PasswordHash: in.Password,
-		Role:         "user",
-		CreatedAt:    time.Now().UTC(),
+func ToProtoUserInfo(users []UserWithProfile) []*authpb.UserInfo {
+	result := make([]*authpb.UserInfo, 0, len(users))
+	for i := range users {
+		usrs := &users[i]
+		result = append(
+			result, &authpb.UserInfo{
+				Id:    usrs.ID,
+				Email: usrs.Email,
+				Profile: &authpb.Profile{
+					FirstName:   usrs.FirstName,
+					LastName:    usrs.LastName,
+					Patronymic:  usrs.Patronymic.String,
+					DateOfBirth: usrs.DateOfBirth.Format(time.DateOnly),
+					Phone:       usrs.Phone,
+					Address:     usrs.Address,
+				},
+			},
+		)
+	}
+
+	return result
+}
+
+func ToProtoUserInfoDB(userInfoDB UserInfoDB) authpb.UserInfo {
+	return authpb.UserInfo{
+		Id:    userInfoDB.ID,
+		Email: userInfoDB.Email,
+		Profile: &authpb.Profile{
+			FirstName:   userInfoDB.FirstName,
+			LastName:    userInfoDB.LastName,
+			Patronymic:  userInfoDB.Patronymic,
+			DateOfBirth: userInfoDB.DateOfBirth,
+			Phone:       userInfoDB.Phone,
+			Address:     userInfoDB.Address,
+		},
+	}
+}
+
+func ToProtoBriefUser(user BriefUser) *authpb.GetBriefUserByIDResponse {
+	return &authpb.GetBriefUserByIDResponse{
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		ChatId:    user.ChatID,
 	}
 }

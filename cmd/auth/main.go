@@ -3,111 +3,174 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	grpcPrometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/patyukin/mbs-auth/internal/cacher"
 	"github.com/patyukin/mbs-auth/internal/config"
+	"github.com/patyukin/mbs-auth/internal/cronjob"
 	"github.com/patyukin/mbs-auth/internal/db"
+	"github.com/patyukin/mbs-auth/internal/metrics"
 	"github.com/patyukin/mbs-auth/internal/server"
 	"github.com/patyukin/mbs-auth/internal/usecase"
-	desc "github.com/patyukin/mbs-auth/pkg/auth_v1"
-	"github.com/patyukin/mbs-auth/pkg/dbconn"
-	"github.com/patyukin/mbs-auth/pkg/migrator"
-	"github.com/patyukin/mbs-auth/pkg/utils"
-	_ "github.com/patyukin/mbs-auth/statik"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rakyll/statik/fs"
+	"github.com/patyukin/mbs-pkg/pkg/dbconn"
+	"github.com/patyukin/mbs-pkg/pkg/kafka"
+	"github.com/patyukin/mbs-pkg/pkg/migrator"
+	"github.com/patyukin/mbs-pkg/pkg/mux_server"
+	desc "github.com/patyukin/mbs-pkg/pkg/proto/auth_v1"
+	"github.com/patyukin/mbs-pkg/pkg/rabbitmq"
+	"github.com/patyukin/mbs-pkg/pkg/tracing"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"net"
-	"net/http"
-	"os"
-	"sync"
-	"time"
 )
+
+const ServiceName = "AuthService"
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal().Msgf("failed to load config, error: %v", err)
 	}
+
+	if err = metrics.Init(); err != nil {
+		log.Fatal().Msgf("failed to init metrics: %v", err)
+	}
+
+	_, closer, err := tracing.InitJaeger(cfg.TracerHost, ServiceName)
+	if err != nil {
+		log.Fatal().Msgf("failed to initialize tracer: %v", err)
+	}
+
+	defer closer()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCServer.Port))
 	if err != nil {
 		log.Fatal().Msgf("failed to listen: %v", err)
 	}
 
-	dbConn, err := dbconn.New(context.Background(), dbconn.PostgreSQLConfig(cfg.PostgreSQL))
+	dbConn, err := dbconn.New(ctx, cfg.PostgreSQLDSN)
 	if err != nil {
 		log.Fatal().Msgf("failed to connect to db: %v", err)
 	}
 
-	if err = migrator.UpMigrations(context.Background(), dbConn); err != nil {
+	if err = migrator.UpMigrations(ctx, dbConn); err != nil {
 		log.Fatal().Msgf("failed to up migrations: %v", err)
 	}
 
+	rbt, err := rabbitmq.New(cfg.RabbitMQUrl, rabbitmq.Exchange)
+	if err != nil {
+		log.Fatal().Msgf("failed to create rabbit producer: %v", err)
+	}
+
+	err = rbt.BindQueueToExchange(
+		rabbitmq.Exchange,
+		rabbitmq.TelegramMessageQueue,
+		[]string{rabbitmq.TelegramMessageRouteKey},
+	)
+	if err != nil {
+		log.Fatal().Msgf("failed to bind NotifyAuthQueue to exchange with - NotifySignUpConfirmCodeRouteKey: %v", err)
+	}
+
+	kfk, err := kafka.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.ConsumerGroup, cfg.Kafka.Topics)
+	if err != nil {
+		log.Fatal().Msgf("failed to create kafka consumer, err: %v", err)
+	}
+
+	chr, err := cacher.New(ctx, cfg.RedisDSN)
+	if err != nil {
+		log.Fatal().Msgf("failed to create redis cacher: %v", err)
+	}
+
 	registry := db.New(dbConn)
-	uc := usecase.New(registry)
+	uc := usecase.New(registry, rbt, chr, cfg)
 	srv := server.New(uc)
 
-	s := grpc.NewServer()
-	reflection.Register(s)
-	desc.RegisterAuthServiceServer(s, srv)
+	// grpc server
+	grpcServer := server.NewGRPCServer(cfg)
+	reflection.Register(grpcServer)
+	desc.RegisterAuthServiceServer(grpcServer, srv)
+	grpcPrometheus.Register(grpcServer)
 
-	log.Printf("server listening at %v", lis.Addr())
+	// http server
+	muxServer := mux_server.New()
 
-	wg := &sync.WaitGroup{}
+	errCh := make(chan error)
+
+	// cron job
+	cj := cronjob.New(uc)
+	go func() {
+		if err = cj.Run(ctx); err != nil {
+			log.Error().Msgf("failed adding cron job, err: %v", err)
+			errCh <- err
+		}
+	}()
+
+	// run consumer
+	go func() {
+		if err = kfk.ProcessMessages(ctx, uc.RegistrationSolutionProcess); err != nil {
+			log.Error().Msgf("failed to process messages: %v", err)
+			errCh <- err
+		}
+	}()
 
 	// GRPC server
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-
 		log.Info().Msgf("GRPC started on :%d", cfg.GRPCServer.Port)
-		if err = s.Serve(lis); err != nil {
-			log.Fatal().Msgf("failed to serve: %v", err)
+		if err = grpcServer.Serve(lis); err != nil {
+			log.Error().Msgf("failed to serve: %v", err)
+			errCh <- err
 		}
 	}()
 
-	// metrics server
-	wg.Add(1)
+	// metrics + pprof server
 	go func() {
-		defer wg.Done()
-
-		http.Handle("/metrics", promhttp.Handler())
-		log.Info().Msgf("Prometheus metrics exposed on :%d/metrics", cfg.HttpServer.Port)
-		if err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.HttpServer.Port), nil); err != nil {
-			log.Fatal().Msgf("Failed to serve Prometheus metrics: %v", err)
+		if err = muxServer.Run(cfg.HTTPServer.Port); err != nil {
+			log.Error().Msgf("Failed to serve Prometheus metrics: %v", err)
+			errCh <- err
 		}
 	}()
 
-	// swagger server
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-		statikFs, errStatikFs := fs.New()
-		if errStatikFs != nil {
-			log.Fatal().Msgf("failed to create statik fs: %v", errStatikFs)
+	select {
+	case err = <-errCh:
+		log.Error().Msgf("Failed to run, err: %v", err)
+	case res := <-sigChan:
+		if res == syscall.SIGINT || res == syscall.SIGTERM {
+			log.Info().Msg("Signal received")
+		} else if res == syscall.SIGHUP {
+			log.Info().Msg("Signal received")
 		}
+	}
 
-		mux := http.NewServeMux()
-		mux.Handle("/", http.StripPrefix("/", http.FileServer(statikFs)))
-		mux.HandleFunc("/api.swagger.json", utils.ServeSwaggerFile("/api.swagger.json"))
+	log.Info().Msg("Shutting Down")
 
-		swaggerSrv := &http.Server{
-			Addr:    fmt.Sprintf(":%d", cfg.SwaggerServer.Port),
-			Handler: mux,
-		}
+	// stop servers
+	grpcServer.GracefulStop()
+	if err = muxServer.Shutdown(ctx); err != nil {
+		log.Error().Msgf("failed to shutdown http server: %v", err)
+	}
 
-		log.Printf("swagger server started on port: %v", swaggerSrv.Addr)
-		if err = swaggerSrv.ListenAndServe(); err != nil {
-			log.Fatal().Msgf("failed to serve swagger: %v", err)
-		}
-	}()
+	if err = dbConn.Close(); err != nil {
+		log.Error().Msgf("failed db connection close: %s", err.Error())
+	}
 
-	wg.Wait()
+	if err = chr.Close(); err != nil {
+		log.Error().Msgf("failed redis connection close: %s", err.Error())
+	}
+
+	cj.Stop()
 }

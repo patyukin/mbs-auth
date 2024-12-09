@@ -74,11 +74,11 @@ OFFSET $1 LIMIT $2;
 		return nil, fmt.Errorf("failed rows.Err(): %w", err)
 	}
 
-	defer func(rows *sql.Rows) {
+	defer func() {
 		if err = rows.Close(); err != nil {
 			log.Error().Msgf("failed close rows: %v", err)
 		}
-	}(rows)
+	}()
 
 	var uwps []model.UserWithProfile
 
@@ -142,8 +142,7 @@ func (r *Repository) SelectUserByUUID(ctx context.Context, userUUID string) (mod
 }
 
 func (r *Repository) SelectNotRegisteredUsers(ctx context.Context) ([]uuid.UUID, error) {
-	// TODO uncomment it
-	currentTime := time.Now().UTC() // .Add(-2 * time.Hour)
+	currentTime := time.Now().UTC().Add(-2 * time.Hour)
 	query := `
 SELECT 
   u.id 
@@ -158,11 +157,11 @@ WHERE tu.chat_id IS NULL
 		return nil, fmt.Errorf("failed to select users in r.db.QueryContext: %w", err)
 	}
 
-	defer func(rows *sql.Rows) {
-		if err = rows.Close(); err != nil {
-			log.Error().Msgf("failed rows.Close: %v", err)
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			log.Error().Msgf("failed to close rows: %v", closeErr)
 		}
-	}(rows)
+	}()
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed during row iteration in rows.Err(): %w", err)

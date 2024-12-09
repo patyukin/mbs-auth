@@ -9,7 +9,7 @@ import (
 	"github.com/patyukin/mbs-auth/internal/model"
 )
 
-func (r *Repository) InsertIntoProfiles(ctx context.Context, in model.Profile) (uuid.UUID, error) {
+func (r *Repository) InsertIntoProfiles(ctx context.Context, in *model.Profile) (uuid.UUID, error) {
 	query := `
 INSERT INTO profiles (user_id, first_name, last_name, patronymic, date_of_birth, email, phone, address, created_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`

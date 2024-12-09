@@ -10,6 +10,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const Day = 24
+
 type Cacher struct {
 	client *redis.Client
 }
@@ -72,7 +74,7 @@ func (r *Cacher) DeleteSignUpCode(ctx context.Context, tgUserName string) error 
 }
 
 func (r *Cacher) Set2FACode(ctx context.Context, userID, code string) error {
-	err := r.client.Set(ctx, "otp2fa:"+userID, code, 24*time.Hour).Err()
+	err := r.client.Set(ctx, "otp2fa:"+userID, code, Day*time.Hour).Err()
 	if err != nil {
 		return fmt.Errorf("failed to set 2fa code: %w", err)
 	}

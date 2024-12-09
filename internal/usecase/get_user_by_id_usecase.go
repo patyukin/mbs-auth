@@ -14,7 +14,7 @@ func (u *UseCase) GetUserByIDUseCase(ctx context.Context, in *authpb.GetUserByID
 		return nil, fmt.Errorf("failed u.registry.GetRepo().SelectUserInfoByID: %w", err)
 	}
 
-	pbm := model.ToProtoUserInfoDB(userInfo)
+	pbm := model.ToProtoUserInfoDB(&userInfo)
 
 	return &authpb.GetUserByIDResponse{User: &pbm}, nil
 }

@@ -50,7 +50,7 @@ WHERE ur.user_id = $1
 }
 
 func (r *Repository) SelectRoleByUserID(ctx context.Context, userID string) (string, error) {
-	query := `SELECT role_id FROM users_roles WHERE user_id = $1`
+	query := `SELECT r.name FROM users_roles AS ur INNER JOIN roles AS r ON ur.role_id = r.id WHERE user_id = $1`
 	row := r.db.QueryRowContext(ctx, query, userID)
 	if row.Err() != nil {
 		return "", fmt.Errorf("failed r.db.QueryRowContext: %w", row.Err())

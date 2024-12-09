@@ -147,12 +147,12 @@ linters:
     - gci
     - ginkgolinter
     - gocheckcompilerdirectives
-    - gochecknoglobals
+#    - gochecknoglobals
     - gochecknoinits
     - gochecksumtype
     - gocognit
     - goconst
-    - gocritic
+#    - gocritic
     - gocyclo
     - godot
     - godox

@@ -6,8 +6,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const CostSalt = 12
+
 func (u *UseCase) HashPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), CostSalt)
 	if err != nil {
 		return "", fmt.Errorf("failed bcrypt.GenerateFromPassword: %w", err)
 	}
